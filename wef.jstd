@@ -1,3 +1,0 @@
-load:
-  - src/wef.core.js
-  - test/wef.coreTest.js

@@ -1,9 +1,11 @@
+/*!
+ * Wef
+ * Copyright (c) 2011 Pablo Escalada
+ * MIT Licensed
+ */
+
 /**
- * Created by JetBrains WebStorm.
- * User: diesire
- * Date: 06/12/11
- * Time: 15:47
- * To change this template use File | Settings | File Templates.
+ * A private namespace
  */
 (function(global) {
     var wef = {
