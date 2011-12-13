@@ -6,19 +6,19 @@
 
 //requires: wef.events, console, cssParser
 //exports: cssParser
-//events: onSelector, onProperty
 
 /**
  * The cssParser plugin
  */
 (function () {
+    //TODO: CssParserAdapter
     var cssParser = {
         name:"cssParser",
         version:"0.0.1",
-        description:"A CSS Parser ;-)",
+        description:"A CSS Parser. Wraps excellent JSCSSP library <http://glazman.org/JSCSSP/>",
         authors:["Pablo Escalada <uo1398@uniovi.es>"],
         licenses:["MIT"], //TODO: Licenses
-        cssParser:function () {
+        init:function () {
             return cssParser;
         },
         parse:function (text) {
@@ -26,11 +26,11 @@
             var sheet = backend.parse(text);
 
             sheet.cssRules.forEach(function (cssRule) {
-                //workaround. No very glad of firing document events
-                var selectorEvent = document.createEvent("Event");
-                selectorEvent.initEvent("selectorFound", true, true);
-                selectorEvent.selectorText = cssRule.mSelectorText;
-                document.dispatchEvent(selectorEvent);
+                //workaround. Not very glad of firing document events
+                var cssRuleEvent = document.createEvent("Event");
+                cssRuleEvent.initEvent("cssRuleFound", true, true);
+                cssRuleEvent.selectorText = cssRule.mSelectorText;
+                document.dispatchEvent(cssRuleEvent);
 
                 cssRule.declarations.forEach(function (declaration) {
                     var propertyEvent = document.createEvent("Event");
