@@ -14,6 +14,6 @@ TestCase("cssParser", {
     },
     "test cssParser method":function () {
         var text = "body {display-model: \"a (intrinsic), b (intrinsic)\";} div#uno {situated: a; display-model: \"123 (intrinsic)\";}";
-        wef.plugins.registered.cssParser.init().parse(text);
+        wef.plugins.registered.cssParser.parse(text);
     }
 });
