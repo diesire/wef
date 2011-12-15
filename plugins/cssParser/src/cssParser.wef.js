@@ -18,6 +18,10 @@
         description:"A CSS Parser. Wraps excellent JSCSSP library <http://glazman.org/JSCSSP/>",
         authors:["Pablo Escalada <uo1398@uniovi.es>"],
         licenses:["MIT"], //TODO: Licenses
+        events: {
+            PROPERTY_FOUND: "propertyFound",
+            CSSRULE_FOUND: "cssRuleFound"
+        },
         init:function () {
             return cssParser;
         },
@@ -28,14 +32,15 @@
             sheet.cssRules.forEach(function (cssRule) {
                 //workaround. Not very glad of firing document events
                 var cssRuleEvent = document.createEvent("Event");
-                cssRuleEvent.initEvent("cssRuleFound", true, true);
-                cssRuleEvent.selectorText = cssRule.mSelectorText;
+                cssRuleEvent.initEvent(cssParser.events.CSSRULE_FOUND, true, true);
+                cssRuleEvent.cssRule = cssRule;
+
                 document.dispatchEvent(cssRuleEvent);
 
                 cssRule.declarations.forEach(function (declaration) {
                     var propertyEvent = document.createEvent("Event");
-                    propertyEvent.initEvent("propertyFound", true, true);
-                    propertyEvent.property = declaration.property;
+                    propertyEvent.initEvent(cssParser.events.PROPERTY_FOUND, true, true);
+                    propertyEvent.declaration = declaration;
                     document.dispatchEvent(propertyEvent);
                 });
             });
