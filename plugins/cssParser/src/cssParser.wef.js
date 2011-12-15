@@ -40,11 +40,10 @@
                     var propertyEvent = document.createEvent("Event");
                     propertyEvent.initEvent(cssParser.events.PROPERTY_FOUND, true, true);
 
-                    var data = {
-                        selectorText:cssRule.selectorText,
+                    propertyEvent.data = {
+                        selectorText:cssRule.selectorText(),
                         declaration:new StyleDeclaration(declaration.property, declaration.valueText)
-                    }
-                    propertyEvent.data = data;
+                    };
                     document.dispatchEvent(propertyEvent);
                 });
             });
@@ -53,18 +52,23 @@
 
     wef.plugins.register("cssParser", cssParser);
 
-    /**
-     * CSS Style declaration
-     * @param property property name
-     * @param valueText property value
-     */
-    function StyleDeclaration(property, valueText) {
-        this.property = property;
-        this.valueText = valueText;
-    };
 
-    StyleDeclaration.prototype = {
-        property:"",
-        valueText:""
-    };
 })();
+
+/**
+ * CSS Style declaration
+ * @param property property name
+ * @param valueText property value
+ */
+function StyleDeclaration(property, valueText) {
+    this.property = property;
+    this.valueText = valueText;
+}
+
+StyleDeclaration.prototype = {
+    property:"",
+    valueText:"",
+    toString:function () {
+        return this.property + ": " + this.valueText;
+    }
+};
