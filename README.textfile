@@ -1,0 +1,17 @@
+h1. About Wef
+
+Wef is a Web Extensions Framework
+
+* License: "MIT License":https://github.com/diesire/wef/blob/master/LICENSE.txt
+* Documentation: "API Documentation":http://turingjs.com/
+* Tests: "test/":https://github.com/diesire/wef/tree/master/test
+
+h2. Development
+
+To build wef
+<pre>
+make build
+</pre>
+
+h2. TODO
+* [ ] Dependency management
