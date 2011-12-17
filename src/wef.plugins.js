@@ -49,5 +49,5 @@
 
     //update namespaces
     wef.plugins = plugins;
-    wef.fn = plugins.registered; //shortcut, may change plugins.registered to private
+    wef.fn = plugins.registered;
 })();
