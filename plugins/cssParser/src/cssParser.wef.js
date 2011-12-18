@@ -11,6 +11,7 @@
  * The cssParser plugin
  */
 
+
 (function () {
     var cssParser = {
         name:"cssParser",
@@ -26,7 +27,7 @@
             return cssParser;
         },
         parse:function (text) {
-            var backend = new CSSParser();
+            var backend = jscssp.init();
             var sheet = backend.parse(text);
 
             sheet.cssRules.forEach(function (cssRule) {
