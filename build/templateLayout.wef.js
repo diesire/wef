@@ -23,7 +23,7 @@ var parser = wef.fn.cssParser; //TODO: loader
 
         init:function () {
             document.addEventListener(parser.events.PROPERTY_FOUND, function (e) {
-                console.debug(e.data.selectorText, e.data.declaration);
+                console.debug("listener........"+e.data.selectorText, e.data.declaration);
                 lastEvent = e;
                 if(isSupportedProperty(e.data.declaration)) {
                     store(e.data.selectorText, e.data.declaration);
@@ -47,6 +47,7 @@ var parser = wef.fn.cssParser; //TODO: loader
                     return ajaxReadFile(file);
                 } catch (e) {
                     //FIXME: chrome workaround
+                    console.error(e);
                     throw "OperationNotSupportedException";
                 }
             }
@@ -69,9 +70,11 @@ var parser = wef.fn.cssParser; //TODO: loader
     function store(selector, declaration) {
         buffer[selector] = declaration;
     }
+
     function isSupportedProperty(declaration) {
+        console.log(" is----- ", declaration.property, " - ", property);
         templateLayout.constants.some(function(property, i, array) {
-            return declaration.property == property ? true: false;
+            return declaration.property == property;
         });
     }
 
