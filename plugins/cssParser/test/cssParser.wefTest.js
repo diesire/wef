@@ -21,3 +21,37 @@ TestCase("cssParser", {
         wef.plugins.registered.cssParser.parse(text);
     }
 });
+
+AsyncTestCase("cssParserAsync", {
+    "test cssParser events":function (queue) {
+        //requires cssParser
+        var text = "body {display: \"a\"}";
+        var events = [];
+        document.addEventListener(parser.events.PROPERTY_FOUND, function (e) {
+            events.push(e.type);
+        }, false);
+        document.addEventListener(parser.events.CSSRULE_FOUND, function (e) {
+                    events.push(e.type);
+                }, false);
+        document.addEventListener(parser.events.PARSER_START, function (e) {
+                    events.push(e.type);
+                }, false);
+        document.addEventListener(parser.events.PARSER_DONE, function (e) {
+                    events.push(e.type);
+                }, false);
+        queue.call(function (callbacks) {
+            var myCallback = callbacks.add(function () {
+                wef.fn.cssParser.parse(text);
+            });
+            window.setTimeout(myCallback, 1000);
+        });
+
+        queue.call(function () {
+            assertEquals(4, events.length);
+            assertEquals("parserStart", events.shift());
+            assertEquals("cssRuleFound", events.shift());
+            assertEquals("propertyFound", events.shift());
+            assertEquals("parserDone", events.shift());
+        })
+    }
+})
