@@ -69,8 +69,8 @@
             return this.property + ": " + this.valueText;
         }
     };
-    wef.plugins.register("cssParser", cssParser);
 
+    wef.plugins.register("cssParser", cssParser);
 
 })();
 
