@@ -36,17 +36,17 @@
                 cssRuleEvent.initEvent(cssParser.events.CSSRULE_FOUND, true, true);
                 cssRuleEvent.cssRule = cssRule; //TODO: data exchange interface
                 document.dispatchEvent(cssRuleEvent);
-                console.debug(cssRuleEvent);
+                console.log(cssRule.cssText());
 
                 cssRule.declarations.forEach(function (declaration) {
                     var propertyEvent = document.createEvent("Event");
                     propertyEvent.initEvent(cssParser.events.PROPERTY_FOUND, true, true);
+                    console.log(declaration.cssText());
                     propertyEvent.data = {
                         selectorText:cssRule.selectorText(),
                         declaration:new StyleDeclaration(declaration.property, declaration.valueText)
                     };
                     document.dispatchEvent(propertyEvent);
-                    console.debug(propertyEvent);
                 });
             });
         }

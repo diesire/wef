@@ -22,32 +22,37 @@ var parser = wef.fn.cssParser; //TODO: loader
         },
 
         init:function () {
+            root = new Template("", "", "");
             document.addEventListener(parser.events.PROPERTY_FOUND, function (e) {
-                console.debug("listener........"+e.data.selectorText, e.data.declaration);
+                console.debug(e.data.selectorText, e.data.declaration);
                 lastEvent = e;
-                if(isSupportedProperty(e.data.declaration)) {
-                    store(e.data.selectorText, e.data.declaration);
-                }
+                //TODO store them
+
+                store(e.data.selectorText, e.data.declaration);
+                //TODO populate TemplateDOM
+                //var model = e.data.declaration.property == this.constants.DISPLAY ? e.data.declaration.valueText : "";
+                //var situation = e.data.declaration.property == this.constants.SITUATION ? e.data.declaration.valueText : "";
+                //this.add(e.data.selectorText, model, situation);
+
             }, false);
             return templateLayout;
         },
 
         transform:function (cssFile) {
 
-            function readFile(file) {
-                //TODO: refactor wef.ajax
+            function readFile(url) {
+                //TODO: refactor
                 function ajaxReadFile() {
                     var request = new XMLHttpRequest();
-                    request.open("get", file, false);
+                    request.open("get", url, false);
                     request.send("");
                     return request.responseText;
                 }
 
                 try {
-                    return ajaxReadFile(file);
+                    return ajaxReadFile(url);
                 } catch (e) {
-                    //FIXME: chrome workaround
-                    console.error(e);
+                    //TODO: chrome workaround
                     throw "OperationNotSupportedException";
                 }
             }
@@ -69,13 +74,6 @@ var parser = wef.fn.cssParser; //TODO: loader
 
     function store(selector, declaration) {
         buffer[selector] = declaration;
-    }
-
-    function isSupportedProperty(declaration) {
-        console.log(" is----- ", declaration.property, " - ", property);
-        templateLayout.constants.some(function(property, i, array) {
-            return declaration.property == property;
-        });
     }
 
     function Template(selectorText, model, situated) {
