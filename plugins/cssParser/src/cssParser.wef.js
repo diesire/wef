@@ -29,48 +29,48 @@
         parse:function (text) {
             var backend = jscssp.init();
             var sheet = backend.parse(text);
+            var cssRuleEvent = document.createEvent("Event");
+            cssRuleEvent.initEvent(cssParser.events.CSSRULE_FOUND, true, true);
+            var propertyEvent = document.createEvent("Event");
+            propertyEvent.initEvent(cssParser.events.PROPERTY_FOUND, true, true);
 
             sheet.cssRules.forEach(function (cssRule) {
                 //workaround. Not very glad of firing document events
-                var cssRuleEvent = document.createEvent("Event");
-                cssRuleEvent.initEvent(cssParser.events.CSSRULE_FOUND, true, true);
-                cssRuleEvent.cssRule = cssRule; //TODO: data exchange interface
+                cssRuleEvent.cssRule = cssRule;
                 document.dispatchEvent(cssRuleEvent);
-                console.log(cssRule.cssText());
+                console.debug(cssRuleEvent);
 
                 cssRule.declarations.forEach(function (declaration) {
-                    var propertyEvent = document.createEvent("Event");
-                    propertyEvent.initEvent(cssParser.events.PROPERTY_FOUND, true, true);
-                    console.log(declaration.cssText());
                     propertyEvent.data = {
                         selectorText:cssRule.selectorText(),
                         declaration:new StyleDeclaration(declaration.property, declaration.valueText)
                     };
                     document.dispatchEvent(propertyEvent);
+                    console.debug(propertyEvent);
                 });
             });
         }
     };
 
-    wef.plugins.register("cssParser", cssParser);
+    /**
+     * CSS Style declaration
+     * @param property property name
+     * @param valueText property value
+     */
+    function StyleDeclaration(property, valueText) {
+        this.property = property;
+        this.valueText = valueText;
+    }
 
+    StyleDeclaration.prototype = {
+        property:"",
+        valueText:"",
+        toString:function () {
+            return this.property + ": " + this.valueText;
+        }
+    };
+
+    wef.plugins.register("cssParser", cssParser);
 
 })();
 
-/**
- * CSS Style declaration
- * @param property property name
- * @param valueText property value
- */
-function StyleDeclaration(property, valueText) {
-    this.property = property;
-    this.valueText = valueText;
-}
-
-StyleDeclaration.prototype = {
-    property:"",
-    valueText:"",
-    toString:function () {
-        return this.property + ": " + this.valueText;
-    }
-};
