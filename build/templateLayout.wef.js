@@ -17,14 +17,14 @@ var parser = wef.fn.cssParser; //TODO: loader
         authors:["Pablo Escalada <uo1398@uniovies>"],
         licenses:["MIT"], //TODO: Licenses
         constants:{
-            DISPLAY:"display-model",
-            SITUATION:"situated"
+            DISPLAY:"display",
+            POSITION:"position"
         },
 
         init:function () {
             root = new Template("", "", "");
             document.addEventListener(parser.events.PROPERTY_FOUND, function (e) {
-                console.log(e.data.selectorText, e.data.declaration);
+                console.debug(e.data.selectorText, e.data.declaration);
                 lastEvent = e;
                 //TODO store them
                 //buffer.add(e.data.selectorText, e.data.declaration);
@@ -40,6 +40,7 @@ var parser = wef.fn.cssParser; //TODO: loader
         transform:function (cssFile) {
 
             function readFile(url) {
+                //TODO: refactor
                 function ajaxReadFile() {
                     var request = new XMLHttpRequest();
                     request.open("get", url, false);
@@ -53,11 +54,9 @@ var parser = wef.fn.cssParser; //TODO: loader
                     //TODO: chrome workaround
                     throw "OperationNotSupportedException";
                 }
-
             }
 
             parser.parse(readFile(cssFile));
-
         },
 
         //testing purposes
@@ -68,16 +67,17 @@ var parser = wef.fn.cssParser; //TODO: loader
 
     var lastEvent = null;
 
+    function Template(selectorText, model, situated) {
+        this.selectorText = selectorText;
+        this.model = model;
+        this.situated = situated;
+    }
+
+    Template.prototype = {
+        model:"",
+        selectorText:"",
+        situated:""
+    };
+
     wef.plugins.register("templateLayout", templateLayout);
 })();
-
-function Template(selectorText, model, situated) {
-    this.selectorText = selectorText;
-    this.model = model;
-    this.situated = situated;
-}
-Template.prototype = {
-    model:"",
-    selectorText:"",
-    situated:""
-};
