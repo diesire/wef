@@ -102,7 +102,7 @@ var parser = wef.fn.cssParser; //TODO: loader
         //<display-type>? && [ [ <string> [ / <row-height> ]? ]+ ] <col-width>*
         //regex for <display-type>     /\s*inline|block|list-item|inline-block|table|inline-table|table-row-group|table-header-group|table-footer-group|table-row|table-column-group|table-column|table-cell|table-caption|none/i
         //regex for <string>    /\s*\"[a-zA-Z0-9.@ ]+\"\s*/
-        
+
 
         function parseDisplay(displayValue) {
             //var displayTypeRegExp = /\s*inline|block|list-item|inline-block|table|inline-table|table-row-group|table-header-group|table-footer-group|table-row|table-column-group|table-column|table-cell|table-caption|none/i;
