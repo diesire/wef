@@ -45,7 +45,7 @@
                 //workaround. Not very glad of firing document events
                 cssRuleEvent.cssRule = cssRule;
                 document.dispatchEvent(cssRuleEvent);
-                console.debug(cssRuleEvent);
+                wef.log.debug(cssRuleEvent);
 
                 cssRule.declarations.forEach(function (declaration) {
                     propertyEvent.data = {
@@ -53,7 +53,7 @@
                         declaration:new StyleDeclaration(declaration.property, declaration.valueText)
                     };
                     document.dispatchEvent(propertyEvent);
-                    console.debug(propertyEvent);
+                    wef.log.debug(propertyEvent);
                 });
             });
 
