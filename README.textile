@@ -5,6 +5,13 @@ Wef is a Web Extensions Framework
 * License: "MIT License":https://github.com/diesire/wef/blob/master/LICENSE.txt
 * Tests: "test/":https://github.com/diesire/wef/tree/master/test
 
+h2. Features
+* Educational purposes. Because I`m learning JavaScript and Hello, world! is mainstream.
+* Work in progress. You know, forever beta stage.
+* Eating your own dog food. Wef is used in my awesome "CSS Template Layout Module":https://github.com/diesire/cssTemplateLayout
+* Plain JavaScript, no third party libraries
+* Modular, extensible
+
 h2. Development
 
 To build wef
@@ -12,5 +19,4 @@ To build wef
 make build
 </pre>
 
-h2. TODO
-* [ ] Dependency management
+For testing, wef uses "jsTestDriver":http://code.google.com/p/js-test-driver/
