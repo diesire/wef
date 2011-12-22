@@ -27,16 +27,16 @@ AsyncTestCase("cssParserAsync", {
         //requires cssParser
         var text = "body {display: \"a\"}";
         var events = [];
-        document.addEventListener(parser.events.PROPERTY_FOUND, function (e) {
+        document.addEventListener(wef.fn.cssParser.events.PROPERTY_FOUND, function (e) {
             events.push(e.type);
         }, false);
-        document.addEventListener(parser.events.CSSRULE_FOUND, function (e) {
+        document.addEventListener(wef.fn.cssParser.events.CSSRULE_FOUND, function (e) {
                     events.push(e.type);
                 }, false);
-        document.addEventListener(parser.events.PARSER_START, function (e) {
+        document.addEventListener(wef.fn.cssParser.events.PARSER_START, function (e) {
                     events.push(e.type);
                 }, false);
-        document.addEventListener(parser.events.PARSER_DONE, function (e) {
+        document.addEventListener(wef.fn.cssParser.events.PARSER_DONE, function (e) {
                     events.push(e.type);
                 }, false);
         queue.call(function (callbacks) {
