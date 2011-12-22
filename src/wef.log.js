@@ -11,19 +11,19 @@
     var backend = console;
 
     var debug = function (message) {
-        backend.debug.apply(this, arguments);
+        backend.debug.apply(backend, arguments);
     };
 
     var error = function (message) {
-        backend.error.apply(this, arguments);
+        backend.error.apply(backend, arguments);
     };
 
     var info = function (message) {
-        backend.info.apply(this, arguments);
+        backend.info.apply(backend, arguments);
     };
 
     var warn = function (message) {
-        backend.warn.apply(this, arguments);
+        backend.warn.apply(backend, arguments);
     };
 
     var log = {
