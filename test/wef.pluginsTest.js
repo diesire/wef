@@ -13,20 +13,20 @@ var correctPlugin = {
 };
 
 TestCase("wef.plugins", {
-    "test plugins not null":function () {
+    "test not null":function () {
         assertNotNull(wef.plugins);
     },
 
-    "test plugin register":function () {
+    "test register":function () {
         wef.plugins.register("correctPlugin", correctPlugin);
         assertNotUndefined(wef.plugins.registered["correctPlugin"]);
     },
 
-    "test plugin namespace":function () {
+    "test namespace":function () {
         assertNotUndefined(wef.fn.correctPlugin);
     },
 
-    "test plugin already registered":function () {
+    "test already registered":function () {
         assertNotUndefined(wef.plugins.registered["correctPlugin"]);
         //not obvious
         assertException(function () {
@@ -34,7 +34,7 @@ TestCase("wef.plugins", {
         });
     },
 
-    "test plugin remove":function () {
+    "test remove":function () {
         wef.plugins.remove("correctPlugin");
         assertUndefined(wef.correctPlugin);
     },
@@ -57,7 +57,7 @@ TestCase("wef.plugins", {
         });
     },
 
-    "test plugin initialization":function () {
+    "test initialization":function () {
         var initPlugin = {
             name:"initPlugin",
             version:"0.0.1",

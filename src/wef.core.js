@@ -17,4 +17,5 @@
     } else {
         global.wef = wef;
     }
+
 })(typeof window === 'undefined' ? this : window);

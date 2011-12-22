@@ -4,21 +4,16 @@
  * MIT Licensed
  */
 
-//requires: wef.events, console, cssParser, wef
-//exports: cssParser
-
 /**
  * The cssParser plugin
  */
-
-
 (function () {
     var cssParser = {
         name:"cssParser",
         version:"0.0.1",
         description:"A CSS Parser. Wraps excellent JSCSSP library <http://glazman.org/JSCSSP/>",
         authors:["Pablo Escalada <uo1398@uniovi.es>"],
-        licenses:["MIT"], //TODO: Licenses
+        licenses:["MIT"],
         events:{
             PROPERTY_FOUND:"propertyFound",
             CSSRULE_FOUND:"cssRuleFound",

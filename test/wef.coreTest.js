@@ -4,10 +4,10 @@
  * MIT Licensed
  */
 TestCase("wef.core", {
-    "test wef not null": function() {
+    "test not null": function() {
         assertNotNull(window.wef);
     },
-    "test global namespace": function() {
+    "test namespace": function() {
             assertNotNull(wef);
         },
     "test wef": function() {
