@@ -8,6 +8,7 @@
  * The wef plugins module.
  */
 (function () {
+    console.info("loading wef.log module...");
     var backend = console;
 
     var debug = function (message) {
@@ -35,4 +36,5 @@
 
     //update namespace
     wef.log = log;
+    console.info("wef.log module loaded OK");
 })();
