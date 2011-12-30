@@ -5,17 +5,30 @@
  */
 
 /**
- * A private namespace
+ * wef module
  */
 (function(global) {
-    var wef = {
-        VERSION: "0.0.1"
+    var wef = function () {
+        return new wef.fn.init();
     };
 
+    wef.fn = wef.prototype;
+
+    wef.prototype.constructor = wef;
+
+    wef.prototype.init = function () {
+        return this;
+    };
+
+    //class properties
+    wef.prototype.version = "0.0.1";
+
+    wef.fn.init.prototype = wef.fn;
+
+    //registering global variable
     if(global.wef) {
         throw new Error("wef has already been defined");
     } else {
         global.wef = wef;
     }
-
-})(typeof window === 'undefined' ? this : window);
+})(window);
