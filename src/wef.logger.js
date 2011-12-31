@@ -61,15 +61,15 @@
     logger.prototype.backend.failSafeGroupEnd = function () {
         level--;
     };
-    logger.prototype.backend.trace = /*window.console.trace ||*/ logger.prototype.backend.log;
+    logger.prototype.backend.trace = window.console.trace || logger.prototype.backend.log;
     logger.prototype.backend.log = window.console.log || logger.prototype.backend.failSafe;
-    logger.prototype.backend.debug = /*window.console.debug ||*/ logger.prototype.backend.log;
-    logger.prototype.backend.info = /*window.console.info ||*/ logger.prototype.backend.log;
-    logger.prototype.backend.error = /*window.console.error ||*/ logger.prototype.backend.log;
-    logger.prototype.backend.warn = /*window.console.warn ||*/ logger.prototype.backend.log;
-    logger.prototype.backend.group = /*window.console.group ||*/ logger.prototype.backend.failSafeGroup;
-    logger.prototype.backend.groupCollapsed = /*window.console.groupCollapsed ||*/ window.console.group || logger.prototype.backend.failSafeGroup;
-    logger.prototype.backend.groupEnd = /*window.console.groupEnd || */logger.prototype.backend.failSafeGroupEnd;
+    logger.prototype.backend.debug = window.console.debug || logger.prototype.backend.log;
+    logger.prototype.backend.info = window.console.info || logger.prototype.backend.log;
+    logger.prototype.backend.error = window.console.error || logger.prototype.backend.log;
+    logger.prototype.backend.warn = window.console.warn || logger.prototype.backend.log;
+    logger.prototype.backend.group = window.console.group || logger.prototype.backend.failSafeGroup;
+    logger.prototype.backend.groupCollapsed = window.console.groupCollapsed || window.console.group || logger.prototype.backend.failSafeGroup;
+    logger.prototype.backend.groupEnd = window.console.groupEnd || logger.prototype.backend.failSafeGroupEnd;
 
     logger.prototype.init.prototype = logger.prototype;
 
