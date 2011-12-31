@@ -3,10 +3,6 @@
  * Copyright (c) 2011 Pablo Escalada
  * MIT Licensed
  */
-
-/**
- * The wef plugins module.
- */
 (function () {
 
     var textFormatter = function() {
