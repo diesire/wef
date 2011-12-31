@@ -56,4 +56,15 @@ test("groups", function() {
     var msg = "qunit testing, don't worry";
     wef.fn.logger().info("message 1").group().info("message 2").group().info("message 3").groupEnd().groupEnd().info("message 4");
     ok(true, "README: this test needs visual confirmation: message 2 is nested into message 1, message 3 is nested into message 2");
+
+    //works with multiple logger() calls because stores level in logger class
+    wef.fn.logger().info("message 1");
+        wef.fn.logger().group();
+        wef.fn.logger().info("message 2");
+        wef.fn.logger().group();
+        wef.fn.logger().info("message 3");
+        wef.fn.logger().groupEnd();
+        wef.fn.logger().groupEnd();
+        wef.fn.logger().info("message 4");
+    (true, "README: this test needs visual confirmation: message 2 is nested into message 1, message 3 is nested into message 2");
 });
