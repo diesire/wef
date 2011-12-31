@@ -29,30 +29,29 @@
     };
 
     var logger = function() {
-        console.warn(">>>>logger constructor");
         return new logger.prototype.init();
-    };
+    },
+        active = true;
 
     logger.prototype.constructor = logger;
     logger.prototype.level = 0;
     logger.prototype.version = "0.0.1";
     logger.prototype.formatter = new textFormatter();
-
     logger.prototype.init = function () {
+        return this;
+    };
+    logger.off = logger.prototype.off = function () {
+        active = false;
+        return this;
+    };
+    logger.on = logger.prototype.on = function () {
+        active = true;
         return this;
     };
 
     logger.prototype.backend = window.console || {};
-    logger.prototype.backend.log = window.console.log || logger.prototype.backend.failSafe;
-    logger.prototype.backend.info = window.console.info || logger.prototype.backend.log;
-    logger.prototype.backend.debug = window.console.debug || logger.prototype.backend.log;
-    logger.prototype.backend.trace = window.console.trace || logger.prototype.backend.log;
-    logger.prototype.backend.error = window.console.error || logger.prototype.backend.log;
-    logger.prototype.backend.warn = window.console.warn || logger.prototype.backend.log;
-    logger.prototype.backend.group = window.console.group || logger.prototype.backend.failSafeGroup;
-    logger.prototype.backend.groupCollapsed = window.console.groupCollapsed || logger.prototype.backend.group;
-    logger.prototype.backend.groupEnd = window.console.groupEnd || logger.prototype.backend.failSafeGroupEnd;
     logger.prototype.backend.failSafe = function () {
+        //silent
     };
     logger.prototype.backend.failSafeGroup = function () {
         this.level++;
@@ -60,52 +59,69 @@
     logger.prototype.backend.failSafeGroupEnd = function () {
         this.level--;
     };
+    logger.prototype.backend.trace = window.console.trace || logger.prototype.backend.log;
+    logger.prototype.backend.log = window.console.log || logger.prototype.backend.failSafe;
+    logger.prototype.backend.debug = window.console.debug || logger.prototype.backend.log;
+    logger.prototype.backend.info = window.console.info || logger.prototype.backend.log;
+    logger.prototype.backend.error = window.console.error || logger.prototype.backend.log;
+    logger.prototype.backend.warn = window.console.warn || logger.prototype.backend.log;
+    logger.prototype.backend.group = window.console.group || logger.prototype.backend.failSafeGroup;
+    logger.prototype.backend.groupCollapsed = window.console.groupCollapsed || window.console.group || logger.prototype.backend.failSafeGroup;
+    logger.prototype.backend.groupEnd = window.console.groupEnd || logger.prototype.backend.failSafeGroupEnd;
 
     logger.prototype.init.prototype = logger.prototype;
 
     logger.prototype.init.prototype.debug = function (message) {
+        if(!active) return this;
         this.backend.debug.apply(this.backend, this.formatter.format(arguments), this.level);
         return this;
     };
 
     logger.prototype.init.prototype.error = function (message) {
+        if(!active) return this;
         this.backend.error.apply(this.backend, this.formatter.format(arguments), this.level);
         return this;
     };
 
     logger.prototype.init.prototype.info = function (message) {
+        if(!active) return this;
         this.backend.info.apply(this.backend, this.formatter.format(arguments), this.level);
         return this;
     };
 
     logger.prototype.init.prototype.warn = function (message) {
+        if(!active) return this;
         this.backend.warn.apply(this.backend, this.formatter.format(arguments), this.level);
         return this;
     };
 
     logger.prototype.init.prototype.log = function (message) {
+        if(!active) return this;
         this.backend.log.apply(this.backend, this.formatter.format(arguments), this.level);
         return this;
     };
 
     logger.prototype.init.prototype.trace = function () {
-        this.backend.trace.apply(this.backend);
+        if(!active) return this;
+        this.backend.trace.call(this.backend);
         return this;
     };
 
     logger.prototype.init.prototype.group = function (message) {
+        if(!active) return this;
         if (message) {
             this.log.apply(this, arguments);
         }
-        this.backend.groupCollapsed.apply(this.backend)
+        this.backend.groupCollapsed.call(this.backend);
         return this;
     };
 
-    logger.prototype.init.prototype.endGroup = function (message) {
+    logger.prototype.init.prototype.groupEnd = function (message) {
+        if(!active) return this;
         if (message) {
             this.log.apply(this, arguments);
         }
-        this.backend.groupEnd.apply(this.backend);
+        this.backend.groupEnd.call(this.backend);
         return this;
     };
 
