@@ -33,32 +33,29 @@ test("pubic methods", function() {
     equal(typeof wef.fn.logger().error(msg, ": error"), typeof wef.fn.logger(), "error()");
     equal(typeof wef.fn.logger().group(msg, ": group"), typeof wef.fn.logger(), "group()");
     equal(typeof wef.fn.logger().groupEnd(msg, ": endGroup"), typeof wef.fn.logger(), "groupEnd()");
-    equal(typeof wef.fn.logger().off(), typeof wef.fn.logger(), "off()");
-    equal(typeof wef.fn.logger().on(), typeof wef.fn.logger(), "on()");
+    equal(typeof wef.fn.logger().filter("all"), typeof wef.fn.logger(), "filter()");
 
-    equal(typeof wef.fn.logger.off(), typeof wef.fn.logger, "logger.off()");
-    equal(typeof wef.fn.logger.on(), typeof wef.fn.logger, "logger.on()");
+    equal(typeof wef.fn.logger.filter("all"), typeof wef.fn.logger, "logger.filter()");
 });
 
 test("chaining", function() {
     var msg = "qunit testing, don't worry";
-    equal(typeof wef.fn.logger().trace(msg).log(msg).debug(msg).info(msg).warn(msg).error(msg).group(msg).groupEnd(msg).off().on().info(msg), typeof wef.fn.logger(), "logger() chaining calls");
-    equal(typeof wef.fn.logger.off().on(), typeof wef.fn.logger, "logger chaining calls");
+    equal(typeof wef.fn.logger().trace(msg).log(msg).debug(msg).info(msg).warn(msg).error(msg).group(msg).groupEnd(msg).filter("all").info(msg), typeof wef.fn.logger(), "logger() chaining calls");
 });
 
-test("on/off", function() {
+test("filter", function() {
     var msg = "qunit testing, don't worry";
-    wef.fn.logger().info("message 1").off().info("message 2").on().info("message 3");
+    wef.fn.logger().info("filter - message 1").filter("none").info("message 2").filter("all").info("message 3");
     ok(true, "README: this test needs visual confirmation. Last messages should be message 1 and message 3, message 2 can't exist");
 });
 
 test("groups", function() {
     var msg = "qunit testing, don't worry";
-    wef.fn.logger().info("message 1").group().info("message 2").group().info("message 3").groupEnd().groupEnd().info("message 4");
+    wef.fn.logger().info("groups - message 1").group().info("message 2").group().info("message 3").groupEnd().groupEnd().info("message 4");
     ok(true, "README: this test needs visual confirmation: message 2 is nested into message 1, message 3 is nested into message 2");
 
     //works with multiple logger() calls because stores level in logger class
-    wef.fn.logger().info("message 1");
+    wef.fn.logger().info("groups 2 - message 1");
         wef.fn.logger().group();
         wef.fn.logger().info("message 2");
         wef.fn.logger().group();
