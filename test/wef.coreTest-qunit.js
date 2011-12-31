@@ -3,6 +3,7 @@
  * Copyright (c) 2011 Pablo Escalada
  * MIT Licensed
  */
+module("core");
 test("namespace", function() {
     notEqual(wef, undefined, "is wef namespace defined?");
     equal(typeof wef, "function", "is wef a function?");
