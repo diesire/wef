@@ -17,6 +17,7 @@ test("wef.logger.fn", function() {
 test("constructor", function() {
     equal(typeof wef.fn.logger(), "object", "empty constructor returns an object");
     equal(typeof wef().logger(), "object", "empty constructor returns an object");
+    equal(typeof wef().logger("test"), "object", "empty constructor returns an object");
 });
 
 test("public properties", function() {
@@ -25,8 +26,8 @@ test("public properties", function() {
 
 test("pubic methods", function() {
     var msg = "qunit testing, don't worry";
-    equal(typeof wef.fn.logger().trace(msg, ": trace"), typeof wef.fn.logger(), "trace()");
-    equal(typeof wef.fn.logger().log(msg, ": log"), typeof wef.fn.logger(), "log()");
+    equal(typeof wef.fn.logger().trace(), typeof wef.fn.logger(), "trace()");
+    equal(typeof wef.fn.logger().log(), typeof wef.fn.logger(), "log()");
     equal(typeof wef.fn.logger().debug(msg, ": debug"), typeof wef.fn.logger(), "debug()");
     equal(typeof wef.fn.logger().info(msg, ": info"), typeof wef.fn.logger(), "info()");
     equal(typeof wef.fn.logger().warn(msg, ": warn"), typeof wef.fn.logger(), "warn()");
@@ -45,23 +46,26 @@ test("chaining", function() {
 
 test("filter", function() {
     var msg = "qunit testing, don't worry";
-    wef.fn.logger().info("filter - message 1").filter("none").info("message 2").filter("all").info("message 3");
-    ok(true, "README: this test needs visual confirmation. Last messages should be message 1 and message 3, message 2 can't exist");
+    equal(wef.fn.logger().info("filter - message 1").filter("none").info("message 2")._filteredLogs(), 1, "One message has been filtered");
+    equal(wef.fn.logger().filter("all").info("message 3")._filteredLogs(), 0, "No messages has been filtered");
 });
 
 test("groups", function() {
     var msg = "qunit testing, don't worry";
-    wef.fn.logger().info("groups - message 1").group().info("message 2").group().info("message 3").groupEnd().groupEnd().info("message 4");
-    ok(true, "README: this test needs visual confirmation: message 2 is nested into message 1, message 3 is nested into message 2");
+    equal(wef.fn.logger().info("groups - message 1")._getIndentLevel("default"), 0, "Nesting level 0");
+    equal(wef.fn.logger().group().info("message 2")._getIndentLevel("default"), 1, "Nesting level 1");
+    equal(wef.fn.logger().group().info("message 3")._getIndentLevel("default"), 2, "Nesting level 2");
+    equal(wef.fn.logger().groupEnd()._getIndentLevel("default"), 1, "Nesting level 1");
+    equal(wef.fn.logger().groupEnd().info("message 4")._getIndentLevel("default"), 0, "Nesting level 0");
 
     //works with multiple logger() calls because stores level in logger class
     wef.fn.logger().info("groups 2 - message 1");
-        wef.fn.logger().group();
-        wef.fn.logger().info("message 2");
-        wef.fn.logger().group();
-        wef.fn.logger().info("message 3");
-        wef.fn.logger().groupEnd();
-        wef.fn.logger().groupEnd();
-        wef.fn.logger().info("message 4");
-    (true, "README: this test needs visual confirmation: message 2 is nested into message 1, message 3 is nested into message 2");
+    wef.fn.logger().group();
+    wef.fn.logger().info("message 2");
+    wef.fn.logger().group();
+    wef.fn.logger().info("message 3");
+    wef.fn.logger().groupEnd();
+    wef.fn.logger().groupEnd();
+    wef.fn.logger().info("message 4");
+    (true,"README: this test needs visual confirmation: message 2 is nested into message 1, message 3 is nested into message 2");
 });
