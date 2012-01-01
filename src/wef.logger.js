@@ -25,7 +25,7 @@
             levelMarks = "                                                                                            ",
             levelText, typeText;
         tmp = Array.prototype.slice.call(messages, tmp);
-        if (indentationLevel) {
+        if (failSafeIndentation && indentationLevel) {
             levelText = levelMarks.slice(0, indentationLevel);
             tmp.unshift(levelText);
         }
@@ -36,20 +36,63 @@
         return tmp;
     };
 
-    var logger = function() {
-        return new logger.prototype.init();
-    },
-        logLevel = LOGLEVEL.all,
-        indentationLevel = 0;
+    var registered = {},
+        lastLogger,
+        failSafeIndentation = false,
+        logger = function(logName) {
+            if (!logName || logName == "") {
+                logName = "default";
+            }
+            var name = lastLogger = logName || lastLogger;
+            if (registered[lastLogger]) {
+                return registered[lastLogger].logger;
+            } else {
+                var tmpLogger = new logger.prototype.init(lastLogger);
+                registered[lastLogger] = {logLevel: LOGLEVEL.all, indentationLevel: 0, logger: tmpLogger};
+                return tmpLogger;
+            }
+        };
 
     logger.prototype.constructor = logger;
     logger.prototype.version = "0.0.1";
     logger.prototype.formatter = new textFormatter();
-    logger.prototype.init = function () {
+    logger.prototype.init = function (logName) {
+        this.logName = logName;
         return this;
     };
-    logger.filter = logger.prototype.filter = function (limit) {
-        logLevel = LOGLEVEL[limit] || LOGLEVEL.all;
+
+    logger.prototype._filteredLogs = function() {
+        return filteredLogs;
+    };
+    logger.prototype._getIndentLevel = function(logName) {
+        return registered[logName].indentationLevel;
+    };
+
+    logger.filter = logger.prototype.filter = function (obj) {
+        if (!obj) return this;
+
+        if (obj == "none" || obj == "off") {
+            obj = {logLevel: LOGLEVEL.none, pattern: ".*"};
+        }
+
+        if (obj == "all" || obj == "on") {
+            obj = {logLevel: LOGLEVEL.all, pattern: ".*"};
+        }
+
+        if (!obj.logLevel || typeof obj.logLevel != "number" || !obj.pattern || typeof obj.pattern != "string") {
+            //do nothing
+            return this;
+        }
+        var regExp = new RegExp(obj.pattern), logLevel = obj.logLevel;
+
+        for (var name in registered) {
+            if (regExp.test(name)) {
+                registered[name].logLevel = logLevel;
+            } else {
+                registered[name].logLevel = LOGLEVEL.none;
+            }
+        }
+        filteredLogs = 0;
         return this;
     };
 
@@ -58,10 +101,10 @@
         //silent
     };
     logger.prototype.backend.failSafeGroup = function () {
-        indentationLevel++;
+        failSafeIndentation = true;
     };
     logger.prototype.backend.failSafeGroupEnd = function () {
-        indentationLevel--;
+        failSafeIndentation = true;
     };
     logger.prototype.backend.trace = window.console.trace || logger.prototype.backend.log;
     logger.prototype.backend.log = window.console.log || logger.prototype.backend.failSafe;
@@ -76,44 +119,66 @@
     logger.prototype.init.prototype = logger.prototype;
 
     logger.prototype.init.prototype.debug = function (message) {
-        if (logLevel > LOGLEVEL.debug) return this;
-        this.backend.debug.apply(this.backend, this.formatter.format(arguments, indentationLevel));
+        if (registered[lastLogger].logLevel > LOGLEVEL.debug) {
+            filteredLogs++;
+            return this;
+        }
+        this.backend.debug.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
         return this;
     };
 
     logger.prototype.init.prototype.error = function (message) {
-        if (logLevel > LOGLEVEL.error) return this;
-        this.backend.error.apply(this.backend, this.formatter.format(arguments, indentationLevel));
+        if (registered[lastLogger].logLevel > LOGLEVEL.error) {
+            filteredLogs++;
+            return this;
+        }
+        this.backend.error.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
         return this;
     };
 
     logger.prototype.init.prototype.info = function (message) {
-        if (logLevel > LOGLEVEL.info) return this;
-        this.backend.info.apply(this.backend, this.formatter.format(arguments, indentationLevel));
+        if (registered[lastLogger].logLevel > LOGLEVEL.info) {
+            filteredLogs++;
+            return this;
+        }
+        this.backend.info.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
         return this;
     };
 
     logger.prototype.init.prototype.warn = function (message) {
-        if (logLevel > LOGLEVEL.warn) return this;
-        this.backend.warn.apply(this.backend, this.formatter.format(arguments, indentationLevel));
+        if (registered[lastLogger].logLevel > LOGLEVEL.warn) {
+            filteredLogs++;
+            return this;
+        }
+        this.backend.warn.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
         return this;
     };
 
     logger.prototype.init.prototype.log = function (message) {
-        if (logLevel > LOGLEVEL.log) return this;
-        this.backend.log.apply(this.backend, this.formatter.format(arguments, indentationLevel));
+        if (registered[lastLogger].logLevel > LOGLEVEL.log) {
+            filteredLogs++;
+            return this;
+        }
+        this.backend.log.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
         return this;
     };
 
     logger.prototype.init.prototype.trace = function () {
-        if (logLevel > LOGLEVEL.trace) return this;
+        if (registered[lastLogger].logLevel > LOGLEVEL.trace) {
+            filteredLogs++;
+            return this;
+        }
         this.backend.trace.call(this.backend);
         return this;
     };
 
     logger.prototype.init.prototype.group = function (message) {
+        registered[lastLogger].indentationLevel++;
         this.backend.groupCollapsed.call(this.backend);
-        if (logLevel > LOGLEVEL.log) return this;
+        if (registered[lastLogger].logLevel > LOGLEVEL.log) {
+            filteredLogs++;
+            return this;
+        }
         if (message) {
             this.log.apply(this, arguments);
         }
@@ -121,8 +186,12 @@
     };
 
     logger.prototype.init.prototype.groupEnd = function (message) {
+        registered[lastLogger].indentationLevel--;
         this.backend.groupEnd.call(this.backend);
-        if (logLevel > LOGLEVEL.trace) return this;
+        if (registered[lastLogger].logLevel > LOGLEVEL.trace) {
+            filteredLogs++;
+            return this;
+        }
         if (message) {
             this.log.apply(this, arguments);
         }
