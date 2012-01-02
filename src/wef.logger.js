@@ -198,5 +198,5 @@
         return this;
     };
 
-    wef.fn.logger = logger;
+    wef.logger = logger;
 })();

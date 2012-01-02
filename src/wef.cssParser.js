@@ -5182,11 +5182,11 @@
         };
 
     cssParser.prototype.constructor = cssParser;
-    cssParser.prototype.version = "0.0.1";
     var CssParserInstance = function() {
         return this;
     };
 
+    CssParserInstance.prototype.version = "0.0.1";
     CssParserInstance.prototype.parse = function(text, callbacks) {
         //aString, aTryToPreserveWhitespaces, aTryToPreserveComments
         var sheet = new CSSParser().parse(text, false, false);
@@ -5196,14 +5196,16 @@
         //start
         sheet.cssRules.forEach(function (cssRule) {
             //cssFound.cssRule
-            wef.log.debug(cssRuleEvent);
+            //wef.log.debug(cssRuleEvent);
             cssRule.declarations.forEach(function (declaration) {
                 //propertyFound.cssRule.selectorText(),
                 //propoertyFound.declaration:new StyleDeclaration(declaration.property, declaration.valueText)
-                wef.log.debug(propertyEvent);
+                //wef.log.debug(propertyEvent);
             });
         });
         //done
     }
     cssParser.prototype.init = CssParserInstance;
+
+    wef.cssParser = cssParser;
 })();
