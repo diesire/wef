@@ -6,7 +6,7 @@
 module("core");
 test("namespace", function() {
     notEqual(wef, undefined, "is wef namespace defined?");
-    notEqual(typeof wef, "function", "is wef a function?");
+    equal(typeof wef, "object", "is wef an object?");
 });
 
 test("public properties", function() {
