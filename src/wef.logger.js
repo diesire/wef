@@ -1,10 +1,11 @@
+//requires: wef
+
 /*!
  * Wef logger
  * Copyright (c) 2011 Pablo Escalada
  * MIT Licensed
  */
 (function () {
-
     var LOGLEVEL = {
         all:-1,
         trace:1,
