@@ -5187,40 +5187,23 @@
         return this;
     };
 
-    CssParserInstance.prototype.parse = function(text) {
+    CssParserInstance.prototype.parse = function(text, callbacks) {
         //aString, aTryToPreserveWhitespaces, aTryToPreserveComments
         var sheet = new CSSParser().parse(text, false, false);
-
-        var cssRuleEvent = document.createEvent("Event");
-        cssRuleEvent.initEvent(cssParser.events.CSSRULE_FOUND, true, true);
-        var propertyEvent = document.createEvent("Event");
-        propertyEvent.initEvent(cssParser.events.PROPERTY_FOUND, true, true);
-
-        var parserStartEvent = document.createEvent("Event");
-        parserStartEvent.initEvent(cssParser.events.PARSER_START, true, true);
-        parserStartEvent.date = new Date().toGMTString();
-        document.dispatchEvent(parserStartEvent);
-
+        if (!callbacks) {
+            return sheet;
+        }
+        //start
         sheet.cssRules.forEach(function (cssRule) {
-            //workaround. Not very glad of firing document events
-            cssRuleEvent.cssRule = cssRule;
-            document.dispatchEvent(cssRuleEvent);
+            //cssFound.cssRule
             wef.log.debug(cssRuleEvent);
-
             cssRule.declarations.forEach(function (declaration) {
-                propertyEvent.data = {
-                    selectorText:cssRule.selectorText(),
-                    declaration:new StyleDeclaration(declaration.property, declaration.valueText)
-                };
-                document.dispatchEvent(propertyEvent);
+                //propertyFound.cssRule.selectorText(),
+                //propoertyFound.declaration:new StyleDeclaration(declaration.property, declaration.valueText)
                 wef.log.debug(propertyEvent);
             });
         });
-
-        var parserDoneEvent = document.createEvent("Event");
-        parserDoneEvent.initEvent(cssParser.events.PARSER_DONE, true, true);
-        parserDoneEvent.date = new Date().toGMTString();
-        document.dispatchEvent(parserDoneEvent);
+        //done
     }
-    cssParser.prototype.init  = CssParserInstance;
+    cssParser.prototype.init = CssParserInstance;
 })();
