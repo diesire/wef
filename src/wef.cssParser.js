@@ -9,6 +9,7 @@
  */
 (function () {
 
+    //---------- jscssp code ----------
     /* ***** BEGIN LICENSE BLOCK *****
      * Version: MPL 1.1/GPL 2.0/LGPL 2.1
      *
@@ -5150,76 +5151,7 @@
         return "";
     }
 
-    //jscssp code
-
-
-    /**
-     * Module pattern
-     * @author Pablo Escalada <uo1398@uniovi.es>
-     */
-    var cssInstance = null;
-
-    return {
-        init:function (string) {
-            cssInstance = new CSSParser(string);
-            return cssInstance;
-        },
-        parse:function (aString, aTryToPreserveWhitespaces, aTryToPreserveComments) {
-            return cssInstance.parse(aString, aTryToPreserveWhitespaces, aTryToPreserveComments);
-        }
-    };
-
-
-    var cssParser = {
-        name:"cssParser",
-        version:"0.0.1",
-        description:"A CSS Parser. Wraps excellent JSCSSP library <http://glazman.org/JSCSSP/>",
-        authors:["Pablo Escalada <uo1398@uniovi.es>"],
-        licenses:["MIT"],
-        events:{
-            PROPERTY_FOUND:"propertyFound",
-            CSSRULE_FOUND:"cssRuleFound",
-            PARSER_START:"parserStart",
-            PARSER_DONE:"parserDone"
-        },
-        init:function () {
-            return cssParser;
-        },
-        parse:function (text) {
-            var backend = jscssp.init();
-            var sheet = backend.parse(text);
-            var cssRuleEvent = document.createEvent("Event");
-            cssRuleEvent.initEvent(cssParser.events.CSSRULE_FOUND, true, true);
-            var propertyEvent = document.createEvent("Event");
-            propertyEvent.initEvent(cssParser.events.PROPERTY_FOUND, true, true);
-
-            var parserStartEvent = document.createEvent("Event");
-            parserStartEvent.initEvent(cssParser.events.PARSER_START, true, true);
-            parserStartEvent.date = new Date().toGMTString();
-            document.dispatchEvent(parserStartEvent);
-
-            sheet.cssRules.forEach(function (cssRule) {
-                //workaround. Not very glad of firing document events
-                cssRuleEvent.cssRule = cssRule;
-                document.dispatchEvent(cssRuleEvent);
-                wef.log.debug(cssRuleEvent);
-
-                cssRule.declarations.forEach(function (declaration) {
-                    propertyEvent.data = {
-                        selectorText:cssRule.selectorText(),
-                        declaration:new StyleDeclaration(declaration.property, declaration.valueText)
-                    };
-                    document.dispatchEvent(propertyEvent);
-                    wef.log.debug(propertyEvent);
-                });
-            });
-
-            var parserDoneEvent = document.createEvent("Event");
-            parserDoneEvent.initEvent(cssParser.events.PARSER_DONE, true, true);
-            parserDoneEvent.date = new Date().toGMTString();
-            document.dispatchEvent(parserDoneEvent);
-        }
-    };
+    //----------  end jscssp code ----------
 
     /**
      * CSS Style declaration
@@ -5239,6 +5171,56 @@
         }
     };
 
-    wef.plugins.register("cssParser", cssParser);
+    var events = {
+        PROPERTY_FOUND:"propertyFound",
+        CSSRULE_FOUND:"cssRuleFound",
+        PARSER_START:"parserStart",
+        PARSER_DONE:"parserDone"
+    },
+        cssParser = function() {
+            return new cssParser.prototype.init();
+        };
 
+    cssParser.prototype.constructor = cssParser;
+    cssParser.prototype.version = "0.0.1";
+    var CssParserInstance = function() {
+        return this;
+    };
+
+    CssParserInstance.prototype.parse = function(text) {
+        //aString, aTryToPreserveWhitespaces, aTryToPreserveComments
+        var sheet = new CSSParser().parse(text, false, false);
+
+        var cssRuleEvent = document.createEvent("Event");
+        cssRuleEvent.initEvent(cssParser.events.CSSRULE_FOUND, true, true);
+        var propertyEvent = document.createEvent("Event");
+        propertyEvent.initEvent(cssParser.events.PROPERTY_FOUND, true, true);
+
+        var parserStartEvent = document.createEvent("Event");
+        parserStartEvent.initEvent(cssParser.events.PARSER_START, true, true);
+        parserStartEvent.date = new Date().toGMTString();
+        document.dispatchEvent(parserStartEvent);
+
+        sheet.cssRules.forEach(function (cssRule) {
+            //workaround. Not very glad of firing document events
+            cssRuleEvent.cssRule = cssRule;
+            document.dispatchEvent(cssRuleEvent);
+            wef.log.debug(cssRuleEvent);
+
+            cssRule.declarations.forEach(function (declaration) {
+                propertyEvent.data = {
+                    selectorText:cssRule.selectorText(),
+                    declaration:new StyleDeclaration(declaration.property, declaration.valueText)
+                };
+                document.dispatchEvent(propertyEvent);
+                wef.log.debug(propertyEvent);
+            });
+        });
+
+        var parserDoneEvent = document.createEvent("Event");
+        parserDoneEvent.initEvent(cssParser.events.PARSER_DONE, true, true);
+        parserDoneEvent.date = new Date().toGMTString();
+        document.dispatchEvent(parserDoneEvent);
+    }
+    cssParser.prototype.init  = CssParserInstance;
 })();
