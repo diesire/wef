@@ -5233,6 +5233,9 @@
         sheet.cssRules.forEach(function (cssRule) {
             //cssFound.cssRule
             //wef.log.debug(cssRuleEvent);
+            if(callbacks.cssRuleFound) {
+                callbacks.cssRuleFound.call(cssRule);
+            }
             cssRule.declarations.forEach(function (declaration) {
                 //propertyFound.cssRule.selectorText(),
                 //propoertyFound.declaration:new StyleDeclaration(declaration.property, declaration.valueText)
