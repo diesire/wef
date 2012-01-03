@@ -69,22 +69,22 @@
         return registered[logName].indentationLevel;
     };
 
-    logger.filter = logger.prototype.filter = function (obj) {
-        if (!obj) return this;
+    logger.filter = logger.prototype.filter = function (options) {
+        if (!options) return this;
 
-        if (obj == "none" || obj == "off") {
-            obj = {logLevel: LOGLEVEL.none, pattern: ".*"};
+        if (options == "none" || options == "off") {
+            options = {logLevel: LOGLEVEL.none, pattern: ".*"};
         }
 
-        if (obj == "all" || obj == "on") {
-            obj = {logLevel: LOGLEVEL.all, pattern: ".*"};
+        if (options == "all" || options == "on") {
+            options = {logLevel: LOGLEVEL.all, pattern: ".*"};
         }
 
-        if (!obj.logLevel || typeof obj.logLevel != "number" || !obj.pattern || typeof obj.pattern != "string") {
+        if (!options.logLevel || typeof options.logLevel != "number" || !options.pattern || typeof options.pattern != "string") {
             //do nothing
             return this;
         }
-        var regExp = new RegExp(obj.pattern), logLevel = obj.logLevel;
+        var regExp = new RegExp(options.pattern), logLevel = options.logLevel;
 
         for (var name in registered) {
             if (regExp.test(name)) {

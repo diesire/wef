@@ -5178,7 +5178,7 @@
         cssParser = function() {
             return new cssParser.prototype.init();
         },
-        logger = wef.logger("cssParser");
+        logger = wef.logger("cssParser").filter("none");
 
     cssParser.prototype.constructor = cssParser;
     var CssParserInstance = function() {
@@ -5230,43 +5230,50 @@
     CssParserInstance.prototype.parse = function(data) {
         try {
             if (!data || !wef.isString(data) || data === "") {
-                throw new Error("InvalidArgumentExcetion - data must be a non empty string");
+                var message = "InvalidArgumentExcetion - data must be a non empty string";
+                logger.error(message);
+                throw new Error(message);
             }
-            var sheet = new CSSParser().parse(data, false, false);
             if (callbacks.parserStar) {
+                logger.info("parserStart callback");
                 callbacks.parserStar.call();
             }
+            var sheet = new CSSParser().parse(data, false, false), property;
             //start
             sheet.cssRules.forEach(function (cssRule) {
-                //cssFound.cssRule
-                //wef.log.debug(cssRuleEvent);
+                logger.debug("cssRule:",cssRule);
                 if (callbacks.cssRuleFound) {
+                    logger.info("cssRuleFound callback");
                     callbacks.cssRuleFound.call(cssRule);
                 }
                 //ErrorRule
                 if (cssRule.type === 0) {
-                    throw new Error("ParserException - Error in line " + cssRule.currentLine + ": " + cssRule.parsedCssText);
+                    var message = "ParserException - Error in line " + cssRule.currentLine + ": " + cssRule.parsedCssText;
+                    logger.error(message);
+                    throw new Error(message);
                 }
                 cssRule.declarations.forEach(function (declaration) {
-                    //propertyFound.cssRule.selectorText(),
-                    //propoertyFound.declaration:new StyleDeclaration(declaration.property, declaration.valueText)
-                    //wef.log.debug(propertyEvent);
-                    if (callbacks.propertyFound) {
-                        var property = {selectorText: cssRule.selectorText(),
+                    property = {selectorText: cssRule.selectorText(),
                             declaration: new StyleDeclaration(declaration.property, declaration.valueText)};
+                    logger.debug("property:", property);
+                    if (callbacks.propertyFound) {
+                        logger.info("propoertyFound callback");
                         callbacks.propertyFound.call(property);
                     }
                 });
             });
             //done
             if (callbacks.parserStop) {
+                logger.info("parserStop callback");
                 callbacks.parserStop.call();
             }
         } catch(e) {
             if (callbacks.error) {
+                logger.error("error callback:", e);
                 callbacks.error.call(e.message);
                 return this;
             } else {
+                logger.error("error -> wef.error:", e);
                 wef.error(e.message);
                 return null;
             }
@@ -5277,4 +5284,5 @@
     cssParser.prototype.init = CssParserInstance;
 
     wef.cssParser = cssParser;
+    logger.info("cssParser plugged to wef.cssParser")
 })();
