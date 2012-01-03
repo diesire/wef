@@ -38,7 +38,11 @@ test("parse exceptions", function() {
     raises(function() {
         wef.cssParser().parse("")
     }, "empty data throws an exception");
+
     notEqual(wef.cssParser().parse("body{}"), null, "empty cssRule ok");
     notEqual(wef.cssParser().parse("body{234}"), null, "invalid cssRule declaration ok");
     notEqual(wef.cssParser().parse("body{} h1{display:none}"), null, "empty cssRule ok");
+
+    notEqual(wef.cssParser().whenError(function() {}).parse("asd"), null, "error callback catches exception");
+    notEqual(wef.cssParser().whenError(function() {}).parse("asd").parse("body{}"), null, "error callback allows chaining");
 });
