@@ -22,7 +22,7 @@ test("pubic methods", function() {
     notEqual(wef.cssParser().parse(text), null, "parse(string) ok");
 });
 
-test("parse", function() {
+test("parse exceptions", function() {
     raises(function() {
         wef.cssParser().parse("asd");
     }, "invalid css data throws an exception");
@@ -38,7 +38,7 @@ test("parse", function() {
     raises(function() {
         wef.cssParser().parse("")
     }, "empty data throws an exception");
-    notEqual(wef.cssParser().parse("body{}"), null, "empty cssRule throws an exception");
-    notEqual(wef.cssParser().parse("body{234}"), null, "invalid cssRule declaration throws an exception");
-    notEqual(wef.cssParser().parse("body{} h1{display:none}"), null, "empty cssRule throws an exception");
+    notEqual(wef.cssParser().parse("body{}"), null, "empty cssRule ok");
+    notEqual(wef.cssParser().parse("body{234}"), null, "invalid cssRule declaration ok");
+    notEqual(wef.cssParser().parse("body{} h1{display:none}"), null, "empty cssRule ok");
 });
