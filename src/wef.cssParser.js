@@ -5177,6 +5177,12 @@
         PARSER_START:"parserStart",
         PARSER_DONE:"parserDone"
     },
+    callbacks = {
+        parserStar: undefined,
+        parserStop: undefined,
+        cssRuleFound: undefined,
+        propertyFound: undefined
+    },
         cssParser = function() {
             return new cssParser.prototype.init();
         };
@@ -5188,10 +5194,17 @@
 
     CssParserInstance.prototype.version = "0.0.1";
     CssParserInstance.prototype.parse = function(text, callbacks) {
+
+    CssParserInstance.prototype.whenStart = function(callback) {
+        if(wef.isFunction(callback)) {
+            callbacks.parserStar = callback;
+        }
+        return this;
+    };
         //aString, aTryToPreserveWhitespaces, aTryToPreserveComments
         var sheet = new CSSParser().parse(text, false, false);
-        if (!callbacks) {
-            return sheet;
+        if(callbacks.parserStar) {
+            callbacks.parserStar.call();
         }
         //start
         sheet.cssRules.forEach(function (cssRule) {
