@@ -5222,10 +5222,12 @@
         return this;
     };
 
-    CssParserInstance.prototype.parse = function(text) {
+    CssParserInstance.prototype.parse = function(data) {
         //aString, aTryToPreserveWhitespaces, aTryToPreserveComments
-        var text = text || "";
-        var sheet = new CSSParser().parse(text, false, false);
+        if(!data || !wef.isString(data)) {
+            return null;
+        }
+        var sheet = new CSSParser().parse(data, false, false);
         if(callbacks.parserStar) {
             callbacks.parserStar.call();
         }
