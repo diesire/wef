@@ -1,15 +1,13 @@
 /*!
- * cssParser Wef plugin
+ * wef.cssParser
  * Copyright (c) 2011 Pablo Escalada
  * MIT Licensed
- */
-
-/**
- * The cssParser plugin
+ *
+ * Uses JSCSSP by Daniel Glazman <daniel.glazman@disruptive-innovations.com> licensed under MPL 1.1/GPL 2.0/LGPL 2.1
  */
 (function () {
+    //------------------------------ jscssp code ------------------------------
 
-    //---------- jscssp code ----------
     /* ***** BEGIN LICENSE BLOCK *****
      * Version: MPL 1.1/GPL 2.0/LGPL 2.1
      *
@@ -5150,8 +5148,7 @@
 
         return "";
     }
-
-    //----------  end jscssp code ----------
+    //------------------------------  end jscssp code ------------------------------
 
     /**
      * CSS Style declaration
@@ -5275,7 +5272,8 @@
             }
         }
         return this;
-    }
+    };
+
     cssParser.prototype.init = CssParserInstance;
 
     wef.cssParser = cssParser;
