@@ -43,6 +43,10 @@
         return typeof obj == "function";
     }
 
+    wef.fn.isString = function (obj) {
+        return typeof obj == "string";
+    }
+
     //registering global variable
     if (global.wef) {
         throw new Error("wef has already been defined");
