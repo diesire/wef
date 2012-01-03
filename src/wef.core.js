@@ -47,6 +47,10 @@
         return typeof obj == "string";
     };
 
+    wef.fn.error = function (message) {
+        throw new Error(message);   
+    };
+
     //registering global variable
     if (global.wef) {
         throw new Error("wef has already been defined");
