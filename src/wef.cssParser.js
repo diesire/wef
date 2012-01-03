@@ -5251,6 +5251,7 @@
         if(callbacks.parserStop) {
             callbacks.parserStop.call();
         }
+        return this;
     }
     cssParser.prototype.init = CssParserInstance;
 
