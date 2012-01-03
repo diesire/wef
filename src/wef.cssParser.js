@@ -5201,6 +5201,13 @@
         }
         return this;
     };
+
+    CssParserInstance.prototype.whenStop = function(callback) {
+        if(wef.isFunction(callback)) {
+            callbacks.parserStop = callback;
+        }
+        return this;
+    };
         //aString, aTryToPreserveWhitespaces, aTryToPreserveComments
         var sheet = new CSSParser().parse(text, false, false);
         if(callbacks.parserStar) {
