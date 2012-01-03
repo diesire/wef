@@ -5177,12 +5177,13 @@
         PARSER_START:"parserStart",
         PARSER_DONE:"parserDone"
     },
-    callbacks = {
-        parserStar: undefined,
-        parserStop: undefined,
-        cssRuleFound: undefined,
-        propertyFound: undefined
-    },
+        callbacks = {
+            parserStar: undefined,
+            parserStop: undefined,
+            cssRuleFound: undefined,
+            propertyFound: undefined,
+            error:undefined
+        },
         cssParser = function() {
             return new cssParser.prototype.init();
         };
@@ -5195,63 +5196,83 @@
     CssParserInstance.prototype.version = "0.0.1";
 
     CssParserInstance.prototype.whenStart = function(callback) {
-        if(wef.isFunction(callback)) {
+        if (wef.isFunction(callback)) {
             callbacks.parserStar = callback;
         }
         return this;
     };
 
     CssParserInstance.prototype.whenStop = function(callback) {
-        if(wef.isFunction(callback)) {
+        if (wef.isFunction(callback)) {
             callbacks.parserStop = callback;
         }
         return this;
     };
 
     CssParserInstance.prototype.whenCssRule = function(callback) {
-        if(wef.isFunction(callback)) {
+        if (wef.isFunction(callback)) {
             callbacks.cssRuleFound = callback;
         }
         return this;
     };
 
     CssParserInstance.prototype.whenProperty = function(callback) {
-        if(wef.isFunction(callback)) {
+        if (wef.isFunction(callback)) {
             callbacks.propertyFound = callback;
         }
         return this;
     };
 
+    CssParserInstance.prototype.whenError = function(callback) {
+        if (wef.isFunction(callback)) {
+            callbacks.error = callback;
+        }
+        return this;
+    };
+
     CssParserInstance.prototype.parse = function(data) {
-        //aString, aTryToPreserveWhitespaces, aTryToPreserveComments
-        if(!data || !wef.isString(data)) {
-            return null;
-        }
-        var sheet = new CSSParser().parse(data, false, false);
-        if(callbacks.parserStar) {
-            callbacks.parserStar.call();
-        }
-        //start
-        sheet.cssRules.forEach(function (cssRule) {
-            //cssFound.cssRule
-            //wef.log.debug(cssRuleEvent);
-            if(callbacks.cssRuleFound) {
-                callbacks.cssRuleFound.call(cssRule);
+        try {
+            if (!data || !wef.isString(data) || data === "") {
+                throw new Error("InvalidArgumentExcetion - data must be a non empty string");
             }
-            cssRule.declarations.forEach(function (declaration) {
-                //propertyFound.cssRule.selectorText(),
-                //propoertyFound.declaration:new StyleDeclaration(declaration.property, declaration.valueText)
-                //wef.log.debug(propertyEvent);
-                if(callbacks.propertyFound) {
-                    var property = {selectorText: cssRule.selectorText(),
-                    declaration: new StyleDeclaration(declaration.property, declaration.valueText)};
-                    callbacks.propertyFound.call(property);
+            var sheet = new CSSParser().parse(data, false, false);
+            if (callbacks.parserStar) {
+                callbacks.parserStar.call();
+            }
+            //start
+            sheet.cssRules.forEach(function (cssRule) {
+                //cssFound.cssRule
+                //wef.log.debug(cssRuleEvent);
+                if (callbacks.cssRuleFound) {
+                    callbacks.cssRuleFound.call(cssRule);
                 }
+                //ErrorRule
+                if (cssRule.type === 0) {
+                    throw new Error("ParserException - Error in line " + cssRule.currentLine + ": " + cssRule.parsedCssText);
+                }
+                cssRule.declarations.forEach(function (declaration) {
+                    //propertyFound.cssRule.selectorText(),
+                    //propoertyFound.declaration:new StyleDeclaration(declaration.property, declaration.valueText)
+                    //wef.log.debug(propertyEvent);
+                    if (callbacks.propertyFound) {
+                        var property = {selectorText: cssRule.selectorText(),
+                            declaration: new StyleDeclaration(declaration.property, declaration.valueText)};
+                        callbacks.propertyFound.call(property);
+                    }
+                });
             });
-        });
-        //done
-        if(callbacks.parserStop) {
-            callbacks.parserStop.call();
+            //done
+            if (callbacks.parserStop) {
+                callbacks.parserStop.call();
+            }
+        } catch(e) {
+            if (callbacks.error) {
+                callbacks.error.call(e.message);
+                return this;
+            } else {
+                wef.error(e.message);
+                return null;
+            }
         }
         return this;
     }
