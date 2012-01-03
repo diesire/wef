@@ -5172,15 +5172,16 @@
     };
 
     var callbacks = {
-            parserStar: undefined,
-            parserStop: undefined,
-            cssRuleFound: undefined,
-            propertyFound: undefined,
-            error:undefined
-        },
+        parserStar: undefined,
+        parserStop: undefined,
+        cssRuleFound: undefined,
+        propertyFound: undefined,
+        error:undefined
+    },
         cssParser = function() {
             return new cssParser.prototype.init();
-        };
+        },
+        logger = wef.logger("cssParser");
 
     cssParser.prototype.constructor = cssParser;
     var CssParserInstance = function() {
@@ -5192,6 +5193,7 @@
     CssParserInstance.prototype.whenStart = function(callback) {
         if (wef.isFunction(callback)) {
             callbacks.parserStar = callback;
+            logger.debug("when parserStar -> ", callback);
         }
         return this;
     };
@@ -5199,6 +5201,7 @@
     CssParserInstance.prototype.whenStop = function(callback) {
         if (wef.isFunction(callback)) {
             callbacks.parserStop = callback;
+            logger.debug("when parserStop -> ", callback);
         }
         return this;
     };
@@ -5206,6 +5209,7 @@
     CssParserInstance.prototype.whenCssRule = function(callback) {
         if (wef.isFunction(callback)) {
             callbacks.cssRuleFound = callback;
+            logger.debug("when CssRuleFound -> ", callback);
         }
         return this;
     };
@@ -5213,6 +5217,7 @@
     CssParserInstance.prototype.whenProperty = function(callback) {
         if (wef.isFunction(callback)) {
             callbacks.propertyFound = callback;
+            logger.debug("when propertyFound -> ", callback);
         }
         return this;
     };
@@ -5220,6 +5225,7 @@
     CssParserInstance.prototype.whenError = function(callback) {
         if (wef.isFunction(callback)) {
             callbacks.error = callback;
+            logger.debug("when error -> ", callback);
         }
         return this;
     };
