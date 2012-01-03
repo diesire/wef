@@ -5193,7 +5193,6 @@
     };
 
     CssParserInstance.prototype.version = "0.0.1";
-    CssParserInstance.prototype.parse = function(text, callbacks) {
 
     CssParserInstance.prototype.whenStart = function(callback) {
         if(wef.isFunction(callback)) {
@@ -5222,7 +5221,10 @@
         }
         return this;
     };
+
+    CssParserInstance.prototype.parse = function(text) {
         //aString, aTryToPreserveWhitespaces, aTryToPreserveComments
+        var text = text || "";
         var sheet = new CSSParser().parse(text, false, false);
         if(callbacks.parserStar) {
             callbacks.parserStar.call();
