@@ -4,3 +4,5 @@ build-wef: $(SRC)
 	cat $^ > build/wef.js
 
 build: build-wef
+
+all: build
