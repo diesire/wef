@@ -5240,6 +5240,11 @@
                 //propertyFound.cssRule.selectorText(),
                 //propoertyFound.declaration:new StyleDeclaration(declaration.property, declaration.valueText)
                 //wef.log.debug(propertyEvent);
+                if(callbacks.propertyFound) {
+                    var property = {selectorText: cssRule.selectorText(),
+                    declaration: new StyleDeclaration(declaration.property, declaration.valueText)};
+                    callbacks.propertyFound.call(property);
+                }
             });
         });
         //done
