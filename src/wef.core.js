@@ -36,7 +36,8 @@
             }
             return tmp
         }
-        throw new Error("InvalidArgumentException: incorrect argument type");
+        wef.f.error("InvalidArgumentException: incorrect argument type");
+        return null;
     };
 
     wef.fn.isFunction = function (obj) {
