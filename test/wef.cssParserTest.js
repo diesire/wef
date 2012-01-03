@@ -19,6 +19,13 @@ test("public properties", function() {
 
 test("pubic methods", function() {
     var text = 'body { height: 100%; display: "a.b.c"  /2em "....."  /1em "d.e.f" "....."  /1em "g.h.i"  /2em 5em 1em  *  1em 10em}';
-    ok(wef.cssParser().parse(text) != null, "parse(string) ok");
-    ok(wef.cssParser().parse(444) == null, "parse(number) returns null");
+    notEqual(wef.cssParser().parse(text), null, "parse(string) ok");
+});
+
+test("parse", function() {
+    notEqual(wef.cssParser().parse("asd"), null, "parse(empty string) ok");
+    equals(wef.cssParser().parse(444), null, "parse(number) returns null");
+    equals(wef.cssParser().parse(), null, "parse() returns null");
+    equals(wef.cssParser().parse(null), null, "parse(null) returns null");
+    notEqual(wef.cssParser().parse(""), null, "parse(empty string) ok");
 });
