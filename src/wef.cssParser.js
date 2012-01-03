@@ -5171,13 +5171,7 @@
         }
     };
 
-    var events = {
-        PROPERTY_FOUND:"propertyFound",
-        CSSRULE_FOUND:"cssRuleFound",
-        PARSER_START:"parserStart",
-        PARSER_DONE:"parserDone"
-    },
-        callbacks = {
+    var callbacks = {
             parserStar: undefined,
             parserStop: undefined,
             cssRuleFound: undefined,
