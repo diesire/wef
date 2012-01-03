@@ -5215,6 +5215,13 @@
         }
         return this;
     };
+
+    CssParserInstance.prototype.whenProperty = function(callback) {
+        if(wef.isFunction(callback)) {
+            callbacks.propertyFound = callback;
+        }
+        return this;
+    };
         //aString, aTryToPreserveWhitespaces, aTryToPreserveComments
         var sheet = new CSSParser().parse(text, false, false);
         if(callbacks.parserStar) {
