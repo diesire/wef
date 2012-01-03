@@ -1,10 +1,6 @@
-SRC = src/wef.core.js src/wef.log.js
-SRC_PARSER = plugins/cssParser/src/cssParser.wef.js plugins/cssParser/lib/cssParser.js
+SRC = src/wef.core.js src/wef.logger.js src/wef.cssParser.js
 
 build-wef: $(SRC)
 	cat $^ > build/wef.js
 
-build-parser: $(SRC_PARSER)
-	cat $^ > build/cssParser.wef.js
-
-build: build-wef build-parser
+build: build-wef
