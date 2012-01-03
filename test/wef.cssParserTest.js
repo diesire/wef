@@ -23,9 +23,19 @@ test("pubic methods", function() {
 });
 
 test("parse", function() {
-    notEqual(wef.cssParser().parse("asd"), null, "parse(empty string) ok");
-    equals(wef.cssParser().parse(444), null, "parse(number) returns null");
-    equals(wef.cssParser().parse(), null, "parse() returns null");
-    equals(wef.cssParser().parse(null), null, "parse(null) returns null");
-    notEqual(wef.cssParser().parse(""), null, "parse(empty string) ok");
+    raises(function() {
+        wef.cssParser().parse("asd");
+    }, "invalid css data throws an exception");
+    raises(function() {
+        wef.cssParser().parse(444);
+    }, "parse(number) throws an exception");
+    raises(function() {
+        wef.cssParser().parse()
+    }, "parse(undefined) throws an exception");
+    raises(function() {
+        wef.cssParser().parse(null)
+    }, "parse(null) throws an exception");
+    raises(function() {
+        wef.cssParser().parse("")
+    }, "empty data throws an exception");
 });
