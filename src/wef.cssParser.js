@@ -5240,6 +5240,9 @@
             });
         });
         //done
+        if(callbacks.parserStop) {
+            callbacks.parserStop.call();
+        }
     }
     cssParser.prototype.init = CssParserInstance;
 
