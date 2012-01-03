@@ -41,11 +41,11 @@
 
     wef.fn.isFunction = function (obj) {
         return typeof obj == "function";
-    }
+    };
 
     wef.fn.isString = function (obj) {
         return typeof obj == "string";
-    }
+    };
 
     //registering global variable
     if (global.wef) {
