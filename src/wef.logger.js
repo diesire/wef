@@ -69,6 +69,17 @@
         return registered[logName].indentationLevel;
     };
 
+    /**
+     * Filter current loggers by name and priority level.
+     * Only log entries from matched loggers and priority > filter level are allowed. Filtered logs are lost.
+     *
+     * @param {Object|string} options Filter options. There are two shorcuts :
+     * string "all" activate all loggers (logLevel: -1, pattern: ".*")
+     * string "none" deactivate all loggers (logLevel: 100, pattern: ".*")
+     * @param {number} options.logLevel Priority level
+     * @param {string} options.pattern Pattern that matches against current registered loggers. Pattern must be regExp
+     * compatible.
+     * */
     logger.filter = logger.prototype.filter = function (options) {
         if (!options) return this;
 
