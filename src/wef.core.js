@@ -39,6 +39,10 @@
         throw new Error("InvalidArgumentException: incorrect argument type");
     };
 
+    wef.fn.isFunction = function (obj) {
+        return typeof obj == "function";
+    }
+
     //registering global variable
     if (global.wef) {
         throw new Error("wef has already been defined");
