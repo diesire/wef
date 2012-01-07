@@ -5,7 +5,7 @@
  *
  * Uses JSCSSP by Daniel Glazman <daniel.glazman@disruptive-innovations.com> licensed under MPL 1.1/GPL 2.0/LGPL 2.1
  */
-(function () {
+(function (wef) {
     //------------------------------ jscssp code ------------------------------
 
     /* ***** BEGIN LICENSE BLOCK *****
@@ -5285,4 +5285,4 @@
 
     wef.cssParser = cssParser;
     logger.info("cssParser plugged to wef.cssParser")
-})();
+})(window.wef);
