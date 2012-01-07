@@ -34,7 +34,7 @@
             for (var property in giver) {
                 tmp[property] = giver[property];
             }
-            return tmp
+            return tmp;
         }
         wef.f.error("InvalidArgumentException: incorrect argument type");
         return null;
