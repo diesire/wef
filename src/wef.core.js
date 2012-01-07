@@ -25,10 +25,10 @@
         var tmp = receiver;
         //both must be objects
         if (typeof receiver === "object" && typeof giver === "object") {
-            if (tmp == null) {
+            if (tmp === null) {
                 tmp = {};
             }
-            if (receiver == null) {
+            if (receiver === null) {
                 return tmp;
             }
             for (var property in giver) {
