@@ -5,7 +5,7 @@
  * Copyright (c) 2011 Pablo Escalada
  * MIT Licensed
  */
-(function () {
+(function (wef) {
     var LOGLEVEL = {
         all:-1,
         trace:1,
@@ -211,4 +211,4 @@
     };
 
     wef.logger = logger;
-})();
+})(window.wef);
