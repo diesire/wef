@@ -14,7 +14,7 @@
 
     wef.prototype = {
         constructor:wef,
-        version:"0.0.1",
+        version:"0.1.0",
         init:function () {
             return this;
         }
@@ -126,7 +126,7 @@
     logger.prototype = {
         constructor:logger,
         LOGLEVEL: LOGLEVEL,
-        version:"0.0.1",
+        version:"0.1.0",
         formatter:new textFormatter(),
         init:function (logName) {
             this.logName = logName;
@@ -5337,7 +5337,7 @@
     };
 
     CssParserInstance.prototype = {
-        version:"0.0.1",
+        version:"0.1.0",
 
         backend:undefined,
 
