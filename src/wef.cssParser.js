@@ -5078,7 +5078,7 @@
         parse:function (data) {
             try {
                 if (!data || !wef.isString(data) || data === "") {
-                    var message = "InvalidArgumentExcetion - data must be a non empty string";
+                    var message = "InvalidArgumentException - data must be a non empty string";
                     logger.error(message);
                     throw new Error(message);
                 }
