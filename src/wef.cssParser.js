@@ -5084,7 +5084,7 @@
                 }
                 if (callbacks.parserStar) {
                     logger.info("parserStart callback");
-                    callbacks.parserStar.call();
+                    callbacks.parserStar.call(new Date().toString());
                 }
                 var sheet = new CSSParser().parse(data, false, false), property;
                 //start
@@ -5113,7 +5113,7 @@
                 //done
                 if (callbacks.parserStop) {
                     logger.info("parserStop callback");
-                    callbacks.parserStop.call();
+                    callbacks.parserStop.call(new Date().toString());
                 }
             } catch (e) {
                 if (callbacks.error) {
