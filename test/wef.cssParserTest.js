@@ -52,53 +52,56 @@ test("parse exceptions", function () {
         }).parse("asd").parse("body{}"), null, "error callback allows chaining");
 });
 
-asyncTest("events", function() {
-    var a = 0;
-    wef.cssParser().whenStart(function() {
-        a = 1;
-    }).parse("body{}");
-    equal(a, 1);
-    setTimeout(function() {
-        equal(a, 1);
+asyncTest("events", function () {
+    var text = "body {display: \"a\"}", events = [];
+
+    wef.cssParser().whenStart(function () {
+        events.push("start");
+    });
+    wef.cssParser().whenProperty(function () {
+        events.push("prop");
+    });
+    wef.cssParser().whenCssRule(function () {
+        events.push("css");
+    });
+    wef.cssParser().whenStop(function () {
+        events.push("stop");
+    });
+    wef.cssParser().parse(text);
+
+    setTimeout(function () {
+        expect(4);
+        equal("start", events.shift());
+        equal("css", events.shift());
+        equal("prop", events.shift());
+        equal("stop", events.shift());
         start();
-        equal(a, 1);
-    }, 1000);
+    }, 100);
 });
 
-//test("events", function () {
-//    var text = "body {display: \"a\"}", events = [];
-//
-//    stop();
-//    wef.cssParser().whenStart(function (e) {
-//        console.log("start");
-//        events.push(e.type);
-//    });
-//    wef.cssParser().whenProperty(function (e) {
-//        console.log("prop");
-//
-//        events.push(e.type);
-//    });
-//    wef.cssParser().whenCssRule(function (e) {
-//        console.log("css");
-//
-//        events.push(e.type);
-//    });
-//    wef.cssParser().whenStop(function (e) {
-//        console.log("stop");
-//
-//        events.push(e.type);
-//    });
-//    wef.cssParser().parse(text);
-//
-//    setTimeout(function () {
-//        //expect(5);
-//
-//
-//        //equal(4, events.length);
-//        //equal("parserStart", events.shift());
-//        //equal("cssRuleFound", events.shift());
-//        //equal("propertyFound", events.shift());
-//        //equal("parserDone", events.shift());
-//        start();
-//    }, 1000);
-//});
+asyncTest("error event", function () {
+    var text = "", events = [];
+
+    wef.cssParser().whenStart(function () {
+        events.push("start");
+    });
+    wef.cssParser().whenProperty(function () {
+        events.push("prop");
+    });
+    wef.cssParser().whenCssRule(function () {
+        events.push("css");
+    });
+    wef.cssParser().whenStop(function () {
+        events.push("stop");
+    });
+    wef.cssParser().whenError(function () {
+            events.push("error");
+        });
+    wef.cssParser().parse(text);
+
+    setTimeout(function () {
+        expect(1);
+        equal("error", events.shift());
+        start();
+    }, 100);
+});
