@@ -7,34 +7,41 @@
 /**
  * wef module
  */
-(function(global) {
-    var wef = function() {
+(function () {
+    var wef = function () {
         return new wef.prototype.init();
     };
+
     wef.prototype = {
         constructor:wef,
-        version: "0.0.1",
-        init: function() {
+        version:"0.0.1",
+        init:function () {
             return this;
         }
     };
+
     wef.fn = wef.prototype;
+
+    wef.prototype.init = function() {
+        return this;
+    };
+
     wef.prototype.init.prototype = wef.prototype;
 
     wef.fn.extend = function (receiver, giver) {
-        var tmp = receiver;
+        var tmp = receiver, property;
         //both must be objects
         if (typeof receiver === "object" && typeof giver === "object") {
-            if (tmp == null) {
+            if (tmp === null) {
                 tmp = {};
             }
-            if (receiver == null) {
+            if (receiver === null) {
                 return tmp;
             }
-            for (var property in giver) {
+            for (property in giver) {
                 tmp[property] = giver[property];
             }
-            return tmp
+            return tmp;
         }
         wef.f.error("InvalidArgumentException: incorrect argument type");
         return null;
@@ -49,24 +56,23 @@
     };
 
     wef.fn.error = function (message) {
-        throw new Error(message);   
+        throw new Error(message);
     };
 
     //registering global variable
-    if (global.wef) {
+    if (window.wef) {
         throw new Error("wef has already been defined");
     } else {
-        global.wef = wef();
+        window.wef = wef();
     }
-})(window);
-//requires: wef
 
+})();
 /*!
  * Wef logger
  * Copyright (c) 2011 Pablo Escalada
  * MIT Licensed
  */
-(function () {
+(function (wef) {
     var LOGLEVEL = {
         all:-1,
         trace:1,
@@ -76,106 +82,142 @@
         warn:4,
         error:5,
         none:100
-    };
+    }, textFormatter, registered = {}, lastLogger, failSafeIndentation = false, logger, filteredLogs = 0;
 
-    var textFormatter = function() {
+    textFormatter = function () {
         return this;
     };
 
-    textFormatter.prototype.format = function (messages, indentationLevel, type) {
-        var tmp = [],
-            levelMarks = "                                                                                            ",
-            levelText, typeText;
-        tmp = Array.prototype.slice.call(messages, tmp);
-        if (failSafeIndentation && indentationLevel) {
-            levelText = levelMarks.slice(0, indentationLevel);
-            tmp.unshift(levelText);
-        }
-        if (type) {
-            typeText = "[" + type + "]";
-            tmp.unshift(levelText);
-        }
-        return tmp;
-    };
-
-    var registered = {},
-        lastLogger,
-        failSafeIndentation = false,
-        logger = function(logName) {
-            if (!logName || logName == "") {
-                logName = "default";
+    textFormatter.prototype = {
+        format:function (messages, indentationLevel, type) {
+            var tmp = [], levelMarks = "                                                                                            ", levelText, typeText;
+            tmp = Array.prototype.slice.call(messages, tmp);
+            if (failSafeIndentation && indentationLevel) {
+                levelText = levelMarks.slice(0, indentationLevel);
+                tmp.unshift(levelText);
             }
-            var name = lastLogger = logName || lastLogger;
-            if (registered[lastLogger]) {
-                return registered[lastLogger].logger;
-            } else {
-                var tmpLogger = new logger.prototype.init(lastLogger);
-                registered[lastLogger] = {logLevel: LOGLEVEL.all, indentationLevel: 0, logger: tmpLogger};
-                return tmpLogger;
+            if (type) {
+                typeText = "[" + type + "]";
+                tmp.unshift(typeText);
             }
-        };
-
-    logger.prototype.constructor = logger;
-    logger.prototype.version = "0.0.1";
-    logger.prototype.formatter = new textFormatter();
-    logger.prototype.init = function (logName) {
-        this.logName = logName;
-        return this;
-    };
-
-    logger.prototype._filteredLogs = function() {
-        return filteredLogs;
-    };
-    logger.prototype._getIndentLevel = function(logName) {
-        return registered[logName].indentationLevel;
-    };
-
-    logger.filter = logger.prototype.filter = function (obj) {
-        if (!obj) return this;
-
-        if (obj == "none" || obj == "off") {
-            obj = {logLevel: LOGLEVEL.none, pattern: ".*"};
+            return tmp;
         }
+    };
 
-        if (obj == "all" || obj == "on") {
-            obj = {logLevel: LOGLEVEL.all, pattern: ".*"};
+    logger = function (logName) {
+        var tmpLogger;
+        if (!logName || logName === "") {
+            logName = "default";
         }
+        lastLogger = logName;
+        if (registered[lastLogger]) {
+            return registered[lastLogger].logger;
+        } else {
+            tmpLogger = new logger.prototype.init(lastLogger);
+            registered[lastLogger] = {
+                logLevel:LOGLEVEL.all,
+                indentationLevel:0,
+                logger:tmpLogger
+            };
+            return tmpLogger;
+        }
+    };
 
-        if (!obj.logLevel || typeof obj.logLevel != "number" || !obj.pattern || typeof obj.pattern != "string") {
-            //do nothing
+    logger.prototype = {
+        constructor:logger,
+        LOGLEVEL: LOGLEVEL,
+        version:"0.0.1",
+        formatter:new textFormatter(),
+        init:function (logName) {
+            this.logName = logName;
+            return this;
+        },
+        _filteredLogs:function () {
+            return filteredLogs;
+        },
+        _getIndentLevel:function (logName) {
+            return registered[logName].indentationLevel;
+        },
+        /**
+         * Filter current loggers by name and priority level.
+         * Only log entries from matched loggers and priority > filter level are allowed. Filtered logs are lost.
+         *
+         * @param {Object|string} options Filter options. There are two shortcuts :
+         * string "all" activate all loggers (logLevel: -1, pattern: ".*")
+         * string "none" deactivate all loggers (logLevel: 100, pattern: ".*")
+         * @param {number} options.logLevel Priority level
+         * @param {string} options.pattern Pattern that matches against current registered loggers. Pattern must be regExp
+         * compatible.
+         * */
+        filter:function (options) {
+            var name, regExp, logLevel;
+            if (!options) {
+                return this;
+            }
+
+            if (options == "none" || options == "off") {
+                options = {logLevel:LOGLEVEL.none, pattern:".*"};
+            }
+
+            if (options == "all" || options == "on") {
+                options = {logLevel:LOGLEVEL.all, pattern:".*"};
+            }
+
+            if (!options.logLevel || typeof options.logLevel != "number" || !options.pattern || typeof options.pattern != "string") {
+                //do nothing
+                return this;
+            }
+            regExp = new RegExp(options.pattern);
+            logLevel = options.logLevel;
+
+            for (name in registered) {
+                if (regExp.test(name)) {
+                    registered[name].logLevel = logLevel;
+                } else {
+                    registered[name].logLevel = LOGLEVEL.none;
+                }
+            }
+            filteredLogs = 0;
             return this;
         }
-        var regExp = new RegExp(obj.pattern), logLevel = obj.logLevel;
-
-        for (var name in registered) {
-            if (regExp.test(name)) {
-                registered[name].logLevel = logLevel;
-            } else {
-                registered[name].logLevel = LOGLEVEL.none;
-            }
-        }
-        filteredLogs = 0;
-        return this;
     };
 
+    logger.filter = logger.prototype.filter;
+
+    logger.LOGLEVEL = logger.prototype.LOGLEVEL;
+
+    logger.version = logger.prototype.version;
+
     logger.prototype.backend = window.console || {};
+
     logger.prototype.backend.failSafe = function () {
         //silent
     };
+
     logger.prototype.backend.failSafeGroup = function () {
         failSafeIndentation = true;
     };
+
     logger.prototype.backend.failSafeGroupEnd = function () {
         failSafeIndentation = true;
     };
+
     logger.prototype.backend.trace = window.console.trace || logger.prototype.backend.log;
+
     logger.prototype.backend.log = window.console.log || logger.prototype.backend.failSafe;
+
     logger.prototype.backend.debug = window.console.debug || logger.prototype.backend.log;
+
     logger.prototype.backend.info = window.console.info || logger.prototype.backend.log;
+
     logger.prototype.backend.warn = window.console.warn || logger.prototype.backend.log;
+
     logger.prototype.backend.error = window.console.error || logger.prototype.backend.log;
+
     logger.prototype.backend.group = window.console.group || logger.prototype.backend.failSafeGroup;
+
     logger.prototype.backend.groupCollapsed = window.console.groupCollapsed || window.console.group || logger.prototype.backend.failSafeGroup;
+
     logger.prototype.backend.groupEnd = window.console.groupEnd || logger.prototype.backend.failSafeGroupEnd;
 
     logger.prototype.init.prototype = logger.prototype;
@@ -261,18 +303,16 @@
     };
 
     wef.logger = logger;
-})();/*!
- * cssParser Wef plugin
+
+})(window.wef);/*!
+ * wef.cssParser
  * Copyright (c) 2011 Pablo Escalada
  * MIT Licensed
+ *
+ * Uses JSCSSP by Daniel Glazman <daniel.glazman@disruptive-innovations.com> licensed under MPL 1.1/GPL 2.0/LGPL 2.1
  */
+(function (wef) {
 
-/**
- * The cssParser plugin
- */
-(function () {
-
-    //---------- jscssp code ----------
     /* ***** BEGIN LICENSE BLOCK *****
      * Version: MPL 1.1/GPL 2.0/LGPL 2.1
      *
@@ -322,10 +362,7 @@
     /* FROM http://peter.sh/data/vendor-prefixed-css.php?js=1 */
 
     const kENGINES = [
-        "webkit",
-        "presto",
-        "trident",
-        "generic"
+        "webkit", "presto", "trident", "generic"
     ];
 
     const kCSS_VENDOR_VALUES = {
@@ -645,36 +682,39 @@
                     var p = kCSS_VENDOR_PREFIXES.properties[i];
                     if (p.gecko && (p.webkit || p.presto || p.trident)) {
                         var o = {};
-                        if (this.kEXPORTS_FOR_GECKO) o[p.gecko] = true;
-                        if (this.kEXPORTS_FOR_WEBKIT && p.webkit)  o[p.webkit] = true;
-                        if (this.kEXPORTS_FOR_PRESTO && p.presto)  o[p.presto] = true;
-                        if (this.kEXPORTS_FOR_TRIDENT && p.trident) o[p.trident] = true;
+                        if (this.kEXPORTS_FOR_GECKO) {
+                            o[p.gecko] = true;
+                        }
+                        if (this.kEXPORTS_FOR_WEBKIT && p.webkit) {
+                            o[p.webkit] = true;
+                        }
+                        if (this.kEXPORTS_FOR_PRESTO && p.presto) {
+                            o[p.presto] = true;
+                        }
+                        if (this.kEXPORTS_FOR_TRIDENT && p.trident) {
+                            o[p.trident] = true;
+                        }
                         this.mVENDOR_PREFIXES[p.gecko] = [];
-                        for (var j in o)
+                        for (var j in o) {
                             this.mVENDOR_PREFIXES[p.gecko].push(j)
+                        }
                     }
                 }
             }
-            if (aProperty in this.mVENDOR_PREFIXES)
+            if (aProperty in this.mVENDOR_PREFIXES) {
                 return this.mVENDOR_PREFIXES[aProperty].sort();
+            }
             return null;
         },
 
         parseColorStop:function (parser, token) {
             var color = parser.parseColor(token);
             var position = "";
-            if (!color)
+            if (!color) {
                 return null;
+            }
             token = parser.getToken(true, true);
-            if (token.isPercentage() ||
-                token.isDimensionOfUnit("cm") ||
-                token.isDimensionOfUnit("mm") ||
-                token.isDimensionOfUnit("in") ||
-                token.isDimensionOfUnit("pc") ||
-                token.isDimensionOfUnit("px") ||
-                token.isDimensionOfUnit("em") ||
-                token.isDimensionOfUnit("ex") ||
-                token.isDimensionOfUnit("pt")) {
+            if (token.isPercentage() || token.isDimensionOfUnit("cm") || token.isDimensionOfUnit("mm") || token.isDimensionOfUnit("in") || token.isDimensionOfUnit("pc") || token.isDimensionOfUnit("px") || token.isDimensionOfUnit("em") || token.isDimensionOfUnit("ex") || token.isDimensionOfUnit("pt")) {
                 position = token.value;
                 token = parser.getToken(true, true);
             }
@@ -685,16 +725,11 @@
             var isRadial = false;
             var gradient = { isRepeating:false };
             if (token.isNotNull()) {
-                if (token.isFunction("-moz-linear-gradient(") ||
-                    token.isFunction("-moz-radial-gradient(") ||
-                    token.isFunction("-moz-repeating-linear-gradient(") ||
-                    token.isFunction("-moz-repeating-radial-gradient(")) {
-                    if (token.isFunction("-moz-radial-gradient(") ||
-                        token.isFunction("-moz-repeating-radial-gradient(")) {
+                if (token.isFunction("-moz-linear-gradient(") || token.isFunction("-moz-radial-gradient(") || token.isFunction("-moz-repeating-linear-gradient(") || token.isFunction("-moz-repeating-radial-gradient(")) {
+                    if (token.isFunction("-moz-radial-gradient(") || token.isFunction("-moz-repeating-radial-gradient(")) {
                         gradient.isRadial = true;
                     }
-                    if (token.isFunction("-moz-repeating-linear-gradient(") ||
-                        token.isFunction("-moz-repeating-radial-gradient(")) {
+                    if (token.isFunction("-moz-repeating-linear-gradient(") || token.isFunction("-moz-repeating-radial-gradient(")) {
                         gradient.isRepeating = true;
                     }
 
@@ -711,16 +746,9 @@
                         token = parser.getToken(true, true);
                     }
 
-                    if (token.isLength()
-                        || token.isIdent("top")
-                        || token.isIdent("center")
-                        || token.isIdent("bottom")
-                        || token.isIdent("left")
-                        || token.isIdent("right")) {
+                    if (token.isLength() || token.isIdent("top") || token.isIdent("center") || token.isIdent("bottom") || token.isIdent("left") || token.isIdent("right")) {
                         haveGradientLine = true;
-                        if (token.isLength()
-                            || token.isIdent("left")
-                            || token.isIdent("right")) {
+                        if (token.isLength() || token.isIdent("left") || token.isIdent("right")) {
                             foundHorizPosition = true;
                         }
                         gradient.position = token.value;
@@ -734,16 +762,7 @@
                             token = parser.getToken(true, true);
                         }
 
-                        else if (token.isLength()
-                            || (foundHorizPosition && (token.isIdent("top")
-                            || token.isIdent("center")
-                            || token.isIdent("bottom")))
-                            || (!foundHorizPosition && (token.isLength()
-                            || token.isIdent("top")
-                            || token.isIdent("center")
-                            || token.isIdent("bottom")
-                            || token.isIdent("left")
-                            || token.isIdent("right")))) {
+                        else if (token.isLength() || (foundHorizPosition && (token.isIdent("top") || token.isIdent("center") || token.isIdent("bottom"))) || (!foundHorizPosition && (token.isLength() || token.isIdent("top") || token.isIdent("center") || token.isIdent("bottom") || token.isIdent("left") || token.isIdent("right")))) {
                             gradient.position = ("position" in gradient) ? gradient.position + " " : "";
                             gradient.position += token.value;
                             token = parser.getToken(true, true);
@@ -756,51 +775,48 @@
                         }
 
                         // we must find a comma here
-                        if (!token.isSymbol(","))
+                        if (!token.isSymbol(",")) {
                             return null;
+                        }
                         token = parser.getToken(true, true);
                     }
 
                     // ok... Let's deal with the rest now
                     if (gradient.isRadial) {
-                        if (token.isIdent("circle") ||
-                            token.isIdent("ellipse")) {
+                        if (token.isIdent("circle") || token.isIdent("ellipse")) {
                             gradient.shape = token.value;
                             token = parser.getToken(true, true);
                         }
-                        if (token.isIdent("closest-side") ||
-                            token.isIdent("closest-corner") ||
-                            token.isIdent("farthest-side") ||
-                            token.isIdent("farthest-corner") ||
-                            token.isIdent("contain") ||
-                            token.isIdent("cover")) {
+                        if (token.isIdent("closest-side") || token.isIdent("closest-corner") || token.isIdent("farthest-side") || token.isIdent("farthest-corner") || token.isIdent("contain") || token.isIdent("cover")) {
                             gradient.size = token.value;
                             token = parser.getToken(true, true);
                         }
-                        if (!("shape" in gradient) &&
-                            (token.isIdent("circle") ||
-                                token.isIdent("ellipse"))) {
+                        if (!("shape" in gradient) && (token.isIdent("circle") || token.isIdent("ellipse"))) {
                             // we can still have the second value...
                             gradient.shape = token.value;
                             token = parser.getToken(true, true);
                         }
-                        if ((("shape" in gradient) || ("size" in gradient)) && !token.isSymbol(","))
+                        if ((("shape" in gradient) || ("size" in gradient)) && !token.isSymbol(",")) {
                             return null;
-                        else if (("shape" in gradient) || ("size" in gradient))
+                        } else if (("shape" in gradient) || ("size" in gradient)) {
                             token = parser.getToken(true, true);
+                        }
                     }
 
                     // now color stops...
                     var stop1 = this.parseColorStop(parser, token);
-                    if (!stop1)
+                    if (!stop1) {
                         return null;
+                    }
                     token = parser.currentToken();
-                    if (!token.isSymbol(","))
+                    if (!token.isSymbol(",")) {
                         return null;
+                    }
                     token = parser.getToken(true, true);
                     var stop2 = this.parseColorStop(parser, token);
-                    if (!stop2)
+                    if (!stop2) {
                         return null;
+                    }
                     token = parser.currentToken();
                     if (token.isSymbol(",")) {
                         token = parser.getToken(true, true);
@@ -809,13 +825,16 @@
                     gradient.stops = [stop1, stop2];
                     while (!token.isSymbol(")")) {
                         var colorstop = this.parseColorStop(parser, token);
-                        if (!colorstop)
+                        if (!colorstop) {
                             return null;
+                        }
                         token = parser.currentToken();
-                        if (!token.isSymbol(")") && !token.isSymbol(","))
+                        if (!token.isSymbol(")") && !token.isSymbol(",")) {
                             return null;
-                        if (token.isSymbol(","))
+                        }
+                        if (token.isSymbol(",")) {
                             token = parser.getToken(true, true);
+                        }
                         gradient.stops.push(colorstop);
                     }
                     return gradient;
@@ -840,62 +859,37 @@
                 if (token.isIdent("none")) {
                     shadows.push({ none:true });
                     token = parser.getToken(true, true);
-                }
-                else {
+                } else {
                     if (token.isIdent('inset')) {
                         inset = true;
                         token = parser.getToken(true, true);
                     }
 
-                    if (token.isPercentage() ||
-                        token.isDimensionOfUnit("cm") ||
-                        token.isDimensionOfUnit("mm") ||
-                        token.isDimensionOfUnit("in") ||
-                        token.isDimensionOfUnit("pc") ||
-                        token.isDimensionOfUnit("px") ||
-                        token.isDimensionOfUnit("em") ||
-                        token.isDimensionOfUnit("ex") ||
-                        token.isDimensionOfUnit("pt")) {
+                    if (token.isPercentage() || token.isDimensionOfUnit("cm") || token.isDimensionOfUnit("mm") || token.isDimensionOfUnit("in") || token.isDimensionOfUnit("pc") || token.isDimensionOfUnit("px") || token.isDimensionOfUnit("em") || token.isDimensionOfUnit("ex") || token.isDimensionOfUnit("pt")) {
                         var offsetX = token.value;
                         token = parser.getToken(true, true);
-                    }
-                    else
+                    } else {
                         return [];
+                    }
 
                     if (!inset && token.isIdent('inset')) {
                         inset = true;
                         token = parser.getToken(true, true);
                     }
 
-                    if (token.isPercentage() ||
-                        token.isDimensionOfUnit("cm") ||
-                        token.isDimensionOfUnit("mm") ||
-                        token.isDimensionOfUnit("in") ||
-                        token.isDimensionOfUnit("pc") ||
-                        token.isDimensionOfUnit("px") ||
-                        token.isDimensionOfUnit("em") ||
-                        token.isDimensionOfUnit("ex") ||
-                        token.isDimensionOfUnit("pt")) {
+                    if (token.isPercentage() || token.isDimensionOfUnit("cm") || token.isDimensionOfUnit("mm") || token.isDimensionOfUnit("in") || token.isDimensionOfUnit("pc") || token.isDimensionOfUnit("px") || token.isDimensionOfUnit("em") || token.isDimensionOfUnit("ex") || token.isDimensionOfUnit("pt")) {
                         var offsetX = token.value;
                         token = parser.getToken(true, true);
-                    }
-                    else
+                    } else {
                         return [];
+                    }
 
                     if (!inset && token.isIdent('inset')) {
                         inset = true;
                         token = parser.getToken(true, true);
                     }
 
-                    if (token.isPercentage() ||
-                        token.isDimensionOfUnit("cm") ||
-                        token.isDimensionOfUnit("mm") ||
-                        token.isDimensionOfUnit("in") ||
-                        token.isDimensionOfUnit("pc") ||
-                        token.isDimensionOfUnit("px") ||
-                        token.isDimensionOfUnit("em") ||
-                        token.isDimensionOfUnit("ex") ||
-                        token.isDimensionOfUnit("pt")) {
+                    if (token.isPercentage() || token.isDimensionOfUnit("cm") || token.isDimensionOfUnit("mm") || token.isDimensionOfUnit("in") || token.isDimensionOfUnit("pc") || token.isDimensionOfUnit("px") || token.isDimensionOfUnit("em") || token.isDimensionOfUnit("ex") || token.isDimensionOfUnit("pt")) {
                         var blurRadius = token.value;
                         token = parser.getToken(true, true);
                     }
@@ -905,15 +899,7 @@
                         token = parser.getToken(true, true);
                     }
 
-                    if (token.isPercentage() ||
-                        token.isDimensionOfUnit("cm") ||
-                        token.isDimensionOfUnit("mm") ||
-                        token.isDimensionOfUnit("in") ||
-                        token.isDimensionOfUnit("pc") ||
-                        token.isDimensionOfUnit("px") ||
-                        token.isDimensionOfUnit("em") ||
-                        token.isDimensionOfUnit("ex") ||
-                        token.isDimensionOfUnit("pt")) {
+                    if (token.isPercentage() || token.isDimensionOfUnit("cm") || token.isDimensionOfUnit("mm") || token.isDimensionOfUnit("in") || token.isDimensionOfUnit("pc") || token.isDimensionOfUnit("px") || token.isDimensionOfUnit("em") || token.isDimensionOfUnit("ex") || token.isDimensionOfUnit("pt")) {
                         var spreadRadius = token.value;
                         token = parser.getToken(true, true);
                     }
@@ -923,12 +909,7 @@
                         token = parser.getToken(true, true);
                     }
 
-                    if (token.isFunction("rgb(") ||
-                        token.isFunction("rgba(") ||
-                        token.isFunction("hsl(") ||
-                        token.isFunction("hsla(") ||
-                        token.isSymbol("#") ||
-                        token.isIdent()) {
+                    if (token.isFunction("rgb(") || token.isFunction("rgba(") || token.isFunction("hsl(") || token.isFunction("hsla(") || token.isSymbol("#") || token.isIdent()) {
                         var color = parser.parseColor(token);
                         token = parser.getToken(true, true);
                     }
@@ -939,10 +920,10 @@
                     }
 
                     shadows.push({ none:false,
-                        color:color,
-                        offsetX:offsetX, offsetY:offsetY,
-                        blurRadius:blurRadius,
-                        spreadRadius:spreadRadius });
+                                     color:color,
+                                     offsetX:offsetX, offsetY:offsetY,
+                                     blurRadius:blurRadius,
+                                     spreadRadius:spreadRadius });
 
                     if (token.isSymbol(",")) {
                         inset = false;
@@ -952,11 +933,11 @@
                         offsetX = "0px";
                         offsetY = "0px";
                         token = parser.getToken(true, true);
-                    }
-                    else if (!token.isNotNull())
+                    } else if (!token.isNotNull()) {
                         return shadows;
-                    else
+                    } else {
                         return [];
+                    }
                 }
             }
             return shadows;
@@ -977,72 +958,36 @@
                 if (token.isIdent("none")) {
                     shadows.push({ none:true });
                     token = parser.getToken(true, true);
-                }
-                else {
-                    if (token.isFunction("rgb(") ||
-                        token.isFunction("rgba(") ||
-                        token.isFunction("hsl(") ||
-                        token.isFunction("hsla(") ||
-                        token.isSymbol("#") ||
-                        token.isIdent()) {
+                } else {
+                    if (token.isFunction("rgb(") || token.isFunction("rgba(") || token.isFunction("hsl(") || token.isFunction("hsla(") || token.isSymbol("#") || token.isIdent()) {
                         var color = parser.parseColor(token);
                         token = parser.getToken(true, true);
                     }
-                    if (token.isPercentage() ||
-                        token.isDimensionOfUnit("cm") ||
-                        token.isDimensionOfUnit("mm") ||
-                        token.isDimensionOfUnit("in") ||
-                        token.isDimensionOfUnit("pc") ||
-                        token.isDimensionOfUnit("px") ||
-                        token.isDimensionOfUnit("em") ||
-                        token.isDimensionOfUnit("ex") ||
-                        token.isDimensionOfUnit("pt")) {
+                    if (token.isPercentage() || token.isDimensionOfUnit("cm") || token.isDimensionOfUnit("mm") || token.isDimensionOfUnit("in") || token.isDimensionOfUnit("pc") || token.isDimensionOfUnit("px") || token.isDimensionOfUnit("em") || token.isDimensionOfUnit("ex") || token.isDimensionOfUnit("pt")) {
                         var offsetX = token.value;
                         token = parser.getToken(true, true);
-                    }
-                    else
+                    } else {
                         return [];
-                    if (token.isPercentage() ||
-                        token.isDimensionOfUnit("cm") ||
-                        token.isDimensionOfUnit("mm") ||
-                        token.isDimensionOfUnit("in") ||
-                        token.isDimensionOfUnit("pc") ||
-                        token.isDimensionOfUnit("px") ||
-                        token.isDimensionOfUnit("em") ||
-                        token.isDimensionOfUnit("ex") ||
-                        token.isDimensionOfUnit("pt")) {
+                    }
+                    if (token.isPercentage() || token.isDimensionOfUnit("cm") || token.isDimensionOfUnit("mm") || token.isDimensionOfUnit("in") || token.isDimensionOfUnit("pc") || token.isDimensionOfUnit("px") || token.isDimensionOfUnit("em") || token.isDimensionOfUnit("ex") || token.isDimensionOfUnit("pt")) {
                         var offsetY = token.value;
                         token = parser.getToken(true, true);
-                    }
-                    else
+                    } else {
                         return [];
-                    if (token.isPercentage() ||
-                        token.isDimensionOfUnit("cm") ||
-                        token.isDimensionOfUnit("mm") ||
-                        token.isDimensionOfUnit("in") ||
-                        token.isDimensionOfUnit("pc") ||
-                        token.isDimensionOfUnit("px") ||
-                        token.isDimensionOfUnit("em") ||
-                        token.isDimensionOfUnit("ex") ||
-                        token.isDimensionOfUnit("pt")) {
+                    }
+                    if (token.isPercentage() || token.isDimensionOfUnit("cm") || token.isDimensionOfUnit("mm") || token.isDimensionOfUnit("in") || token.isDimensionOfUnit("pc") || token.isDimensionOfUnit("px") || token.isDimensionOfUnit("em") || token.isDimensionOfUnit("ex") || token.isDimensionOfUnit("pt")) {
                         var blurRadius = token.value;
                         token = parser.getToken(true, true);
                     }
-                    if (!color &&
-                        (token.isFunction("rgb(") ||
-                            token.isFunction("rgba(") ||
-                            token.isFunction("hsl(") ||
-                            token.isFunction("hsla(") ||
-                            token.isSymbol("#") ||
-                            token.isIdent())) {
+                    if (!color && (token.isFunction("rgb(") || token.isFunction("rgba(") || token.isFunction("hsl(") || token.isFunction("hsla(") || token.isSymbol("#") || token.isIdent())) {
                         var color = parser.parseColor(token);
                         token = parser.getToken(true, true);
                     }
 
                     shadows.push({ none:false,
-                        color:color,
-                        offsetX:offsetX, offsetY:offsetY,
-                        blurRadius:blurRadius });
+                                     color:color,
+                                     offsetX:offsetX, offsetY:offsetY,
+                                     blurRadius:blurRadius });
 
                     if (token.isSymbol(",")) {
                         color = "";
@@ -1050,11 +995,11 @@
                         offsetX = "0px";
                         offsetY = "0px";
                         token = parser.getToken(true, true);
-                    }
-                    else if (!token.isNotNull())
+                    } else if (!token.isNotNull()) {
                         return shadows;
-                    else
+                    } else {
                         return [];
+                    }
                 }
             }
             return shadows;
@@ -1087,44 +1032,37 @@
                     var urlContent = parser.parseURL(token);
                     backgrounds.push({ type:"image", value:"url(" + urlContent });
                     token = parser.getToken(true, true);
-                }
-                else if (token.isFunction("-moz-linear-gradient(") ||
-                    token.isFunction("-moz-radial-gradient(") ||
-                    token.isFunction("-moz-repeating-linear-gradient(") ||
-                    token.isFunction("-moz-repeating-radial-gradient(")) {
+                } else if (token.isFunction("-moz-linear-gradient(") || token.isFunction("-moz-radial-gradient(") || token.isFunction("-moz-repeating-linear-gradient(") || token.isFunction("-moz-repeating-radial-gradient(")) {
                     var gradient = this.parseGradient(parser, token);
                     backgrounds.push({ type:gradient.isRadial ? "radial-gradient" : "linear-gradient", value:gradient });
                     token = parser.getToken(true, true);
-                }
-                else
+                } else {
                     return null;
+                }
                 if (token.isSymbol(",")) {
                     token = parser.getToken(true, true);
-                    if (!token.isNotNull())
+                    if (!token.isNotNull()) {
                         return null;
+                    }
                 }
             }
             return backgrounds;
         },
 
         serializeGradient:function (gradient) {
-            var s = gradient.isRadial
-                ? (gradient.isRepeating ? "-moz-repeating-radial-gradient(" : "-moz-radial-gradient(" )
-                : (gradient.isRepeating ? "-moz-repeating-linear-gradient(" : "-moz-linear-gradient(" );
-            if (gradient.angle || gradient.position)
-                s += (gradient.angle ? gradient.angle + " " : "") +
-                    (gradient.position ? gradient.position : "") +
-                    ", ";
-            if (gradient.isRadial && (gradient.shape || gradient.size))
-                s += (gradient.shape ? gradient.shape : "") +
-                    " " +
-                    (gradient.size ? gradient.size : "") +
-                    ", ";
+            var s = gradient.isRadial ? (gradient.isRepeating ? "-moz-repeating-radial-gradient(" : "-moz-radial-gradient(" ) : (gradient.isRepeating ? "-moz-repeating-linear-gradient(" : "-moz-linear-gradient(" );
+            if (gradient.angle || gradient.position) {
+                s += (gradient.angle ? gradient.angle + " " : "") + (gradient.position ? gradient.position : "") + ", ";
+            }
+            if (gradient.isRadial && (gradient.shape || gradient.size)) {
+                s += (gradient.shape ? gradient.shape : "") + " " + (gradient.size ? gradient.size : "") + ", ";
+            }
             for (var i = 0; i < gradient.stops.length; i++) {
                 var colorstop = gradient.stops[i];
                 s += colorstop.color + (colorstop.position ? " " + colorstop.position : "");
-                if (i != gradient.stops.length - 1)
+                if (i != gradient.stops.length - 1) {
                     s += ", ";
+                }
             }
             s += ")";
             return s;
@@ -1145,67 +1083,69 @@
                 var urlContent = parser.parseURL(token);
                 if (urlContent) {
                     borderImage.url = urlContent.substr(0, urlContent.length - 1).trim();
-                    if ((borderImage.url[0] == '"' && borderImage.url[borderImage.url.length - 1] == '"') ||
-                        (borderImage.url[0] == "'" && borderImage.url[borderImage.url.length - 1] == "'"))
+                    if ((borderImage.url[0] == '"' && borderImage.url[borderImage.url.length - 1] == '"') || (borderImage.url[0] == "'" && borderImage.url[borderImage.url.length - 1] == "'")) {
                         borderImage.url = borderImage.url.substr(1, borderImage.url.length - 2);
-                }
-                else
+                    }
+                } else {
                     return null;
-            }
-            else
+                }
+            } else {
                 return null;
+            }
 
             token = parser.getToken(true, true);
-            if (token.isNumber() || token.isPercentage())
+            if (token.isNumber() || token.isPercentage()) {
                 borderImage.offsets.push(token.value);
-            else
+            } else {
                 return null;
+            }
             var i;
             for (i = 0; i < 3; i++) {
                 token = parser.getToken(true, true);
-                if (token.isNumber() || token.isPercentage())
+                if (token.isNumber() || token.isPercentage()) {
                     borderImage.offsets.push(token.value);
-                else
+                } else {
                     break;
+                }
             }
-            if (i == 3)
+            if (i == 3) {
                 token = parser.getToken(true, true);
+            }
 
             if (token.isSymbol("/")) {
                 token = parser.getToken(true, true);
-                if (token.isDimension()
-                    || token.isNumber("0")
-                    || (token.isIdent() && token.value in parser.kBORDER_WIDTH_NAMES))
+                if (token.isDimension() || token.isNumber("0") || (token.isIdent() && token.value in parser.kBORDER_WIDTH_NAMES)) {
                     borderImage.widths.push(token.value);
-                else
+                } else {
                     return null;
+                }
 
                 for (var i = 0; i < 3; i++) {
                     token = parser.getToken(true, true);
-                    if (token.isDimension()
-                        || token.isNumber("0")
-                        || (token.isIdent() && token.value in parser.kBORDER_WIDTH_NAMES))
+                    if (token.isDimension() || token.isNumber("0") || (token.isIdent() && token.value in parser.kBORDER_WIDTH_NAMES)) {
                         borderImage.widths.push(token.value);
-                    else
+                    } else {
                         break;
+                    }
                 }
-                if (i == 3)
+                if (i == 3) {
                     token = parser.getToken(true, true);
+                }
             }
 
             for (var i = 0; i < 2; i++) {
-                if (token.isIdent("stretch")
-                    || token.isIdent("repeat")
-                    || token.isIdent("round"))
+                if (token.isIdent("stretch") || token.isIdent("repeat") || token.isIdent("round")) {
                     borderImage.sizes.push(token.value);
-                else if (!token.isNotNull())
+                } else if (!token.isNotNull()) {
                     return borderImage;
-                else
+                } else {
                     return null;
+                }
                 token = parser.getToken(true, true);
             }
-            if (!token.isNotNull())
+            if (!token.isNotNull()) {
                 return borderImage;
+            }
 
             return null;
         },
@@ -1256,45 +1196,29 @@
             var m = {amplifier:"", medium:"", constraints:[]};
             var token = parser.getToken(true, true);
 
-            if (token.isIdent("all") ||
-                token.isIdent("aural") ||
-                token.isIdent("braille") ||
-                token.isIdent("handheld") ||
-                token.isIdent("print") ||
-                token.isIdent("projection") ||
-                token.isIdent("screen") ||
-                token.isIdent("tty") ||
-                token.isIdent("tv")) {
+            if (token.isIdent("all") || token.isIdent("aural") || token.isIdent("braille") || token.isIdent("handheld") || token.isIdent("print") || token.isIdent("projection") || token.isIdent("screen") || token.isIdent("tty") || token.isIdent("tv")) {
                 m.medium = token.value;
                 token = parser.getToken(true, true);
-            }
-            else if (token.isIdent("not") || token.isIdent("only")) {
+            } else if (token.isIdent("not") || token.isIdent("only")) {
                 m.amplifier = token.value;
                 token = parser.getToken(true, true);
-                if (token.isIdent("all") ||
-                    token.isIdent("aural") ||
-                    token.isIdent("braille") ||
-                    token.isIdent("handheld") ||
-                    token.isIdent("print") ||
-                    token.isIdent("projection") ||
-                    token.isIdent("screen") ||
-                    token.isIdent("tty") ||
-                    token.isIdent("tv")) {
+                if (token.isIdent("all") || token.isIdent("aural") || token.isIdent("braille") || token.isIdent("handheld") || token.isIdent("print") || token.isIdent("projection") || token.isIdent("screen") || token.isIdent("tty") || token.isIdent("tv")) {
                     m.medium = token.value;
                     token = parser.getToken(true, true);
-                }
-                else
+                } else {
                     return null;
+                }
             }
 
             if (m.medium) {
-                if (!token.isNotNull())
+                if (!token.isNotNull()) {
                     return m;
+                }
                 if (token.isIdent("and")) {
                     token = parser.getToken(true, true);
-                }
-                else
+                } else {
                     return null;
+                }
             }
 
             while (token.isSymbol("(")) {
@@ -1315,34 +1239,33 @@
                             if (token.isNotNull()) {
                                 if (token.isIdent("and")) {
                                     token = parser.getToken(true, true);
-                                }
-                                else
+                                } else {
                                     return null;
-                            }
-                            else
+                                }
+                            } else {
                                 return m;
-                        }
-                        else
+                            }
+                        } else {
                             return null;
-                    }
-                    else if (token.isSymbol(")")) {
+                        }
+                    } else if (token.isSymbol(")")) {
                         m.constraints.push({constraint:constraint, value:null});
                         token = parser.getToken(true, true);
                         if (token.isNotNull()) {
                             if (token.isIdent("and")) {
                                 token = parser.getToken(true, true);
-                            }
-                            else
+                            } else {
                                 return null;
-                        }
-                        else
+                            }
+                        } else {
                             return m;
-                    }
-                    else
+                        }
+                    } else {
                         return null;
-                }
-                else
+                    }
+                } else {
                     return null;
+                }
             }
             return m;
         }
@@ -1376,36 +1299,21 @@
 
         kLexTable:[
             //                                     TAB LF      FF  CR
-            0, 0, 0, 0, 0, 0, 0, 0, 0, W, W, 0, W, W, 0, 0,
-            //
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            // SPC !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /
-            W, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, I, 0, 0,
-            // 0   1   2   3   4   5   6   7   8   9   :   ;   <   =   >   ?
-            XI, XI, XI, XI, XI, XI, XI, XI, XI, XI, 0, 0, 0, 0, 0, 0,
-            // @   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O
-            0, XSI, XSI, XSI, XSI, XSI, XSI, SI, SI, SI, SI, SI, SI, SI, SI, SI,
-            // P   Q   R   S   T   U   V   W   X   Y   Z   [   \   ]   ^   _
-            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, 0, S, 0, 0, SI,
-            // `   a   b   c   d   e   f   g   h   i   j   k   l   m   n   o
-            0, XSI, XSI, XSI, XSI, XSI, XSI, SI, SI, SI, SI, SI, SI, SI, SI, SI,
-            // p   q   r   s   t   u   v   w   x   y   z   {   |   }   ~
-            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, 0, 0, 0, 0, 0,
-            //
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            //
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            //     ¡   ¢   £   ¤   ¥   ¦   §   ¨   ©   ª   «   ¬   ­   ®   ¯
-            0, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI,
-            // °   ±   ²   ³   ´   µ   ¶   ·   ¸   ¹   º   »   ¼   ½   ¾   ¿
-            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI,
-            // À   Á   Â   Ã   Ä   Å   Æ   Ç   È   É   Ê   Ë   Ì   Í   Î   Ï
-            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI,
-            // Ð   Ñ   Ò   Ó   Ô   Õ   Ö   ×   Ø   Ù   Ú   Û   Ü   Ý   Þ   ß
-            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI,
-            // à   á   â   ã   ä   å   æ   ç   è   é   ê   ë   ì   í   î   ï
-            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI,
-            // ð   ñ   ò   ó   ô   õ   ö   ÷   ø   ù   ú   û   ü   ý   þ   ÿ
+            0, 0, 0, 0, 0, 0, 0, 0, 0, W, W, 0, W, W, 0, 0, //
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // SPC !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /
+            W, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, I, 0, 0, // 0   1   2   3   4   5   6   7   8   9   :   ;   <   =   >   ?
+            XI, XI, XI, XI, XI, XI, XI, XI, XI, XI, 0, 0, 0, 0, 0, 0, // @   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O
+            0, XSI, XSI, XSI, XSI, XSI, XSI, SI, SI, SI, SI, SI, SI, SI, SI, SI, // P   Q   R   S   T   U   V   W   X   Y   Z   [   \   ]   ^   _
+            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, 0, S, 0, 0, SI, // `   a   b   c   d   e   f   g   h   i   j   k   l   m   n   o
+            0, XSI, XSI, XSI, XSI, XSI, XSI, SI, SI, SI, SI, SI, SI, SI, SI, SI, // p   q   r   s   t   u   v   w   x   y   z   {   |   }   ~
+            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, 0, 0, 0, 0, 0, //
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //     ¡   ¢   £   ¤   ¥   ¦   §   ¨   ©   ª   «   ¬   ­   ®   ¯
+            0, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, // °   ±   ²   ³   ´   µ   ¶   ·   ¸   ¹   º   »   ¼   ½   ¾   ¿
+            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, // À   Á   Â   Ã   Ä   Å   Æ   Ç   È   É   Ê   Ë   Ì   Í   Î   Ï
+            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, // Ð   Ñ   Ò   Ó   Ô   Õ   Ö   ×   Ø   Ù   Ú   Û   Ü   Ý   Þ   ß
+            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, // à   á   â   ã   ä   å   æ   ç   è   é   ê   ë   ì   í   î   ï
+            SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, // ð   ñ   ò   ó   ô   õ   ö   ÷   ø   ù   ú   û   ü   ý   þ   ÿ
             SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI, SI
         ],
 
@@ -1449,14 +1357,16 @@
         },
 
         read:function () {
-            if (this.mPos < this.mString.length)
+            if (this.mPos < this.mString.length) {
                 return this.mString.charAt(this.mPos++);
+            }
             return -1;
         },
 
         peek:function () {
-            if (this.mPos < this.mString.length)
+            if (this.mPos < this.mString.length) {
                 return this.mString.charAt(this.mPos);
+            }
             return -1;
         },
 
@@ -1472,8 +1382,7 @@
 
         startsWithIdent:function (aFirstChar, aSecondChar) {
             var code = aFirstChar.charCodeAt(0);
-            return this.isIdentStart(aFirstChar) ||
-                (aFirstChar == "-" && this.isIdentStart(aSecondChar));
+            return this.isIdentStart(aFirstChar) || (aFirstChar == "-" && this.isIdentStart(aSecondChar));
         },
 
         isIdent:function (c) {
@@ -1487,66 +1396,73 @@
 
         nextHexValue:function () {
             var c = this.read();
-            if (c == -1 || !this.isHexDigit(c))
+            if (c == -1 || !this.isHexDigit(c)) {
                 return new jscsspToken(jscsspToken.NULL_TYPE, null);
+            }
             var s = c;
             c = this.read();
             while (c != -1 && this.isHexDigit(c)) {
                 s += c;
                 c = this.read();
             }
-            if (c != -1)
+            if (c != -1) {
                 this.pushback();
+            }
             return new jscsspToken(jscsspToken.HEX_TYPE, s);
         },
 
         gatherEscape:function () {
             var c = this.peek();
-            if (c == -1)
+            if (c == -1) {
                 return "";
+            }
             if (this.isHexDigit(c)) {
                 var code = 0;
                 for (var i = 0; i < 6; i++) {
                     c = this.read();
-                    if (this.isHexDigit(c))
+                    if (this.isHexDigit(c)) {
                         code = code * 16 + this.kHexValues[c.toLowerCase()];
-                    else if (!this.isHexDigit(c) && !this.isWhiteSpace(c)) {
+                    } else if (!this.isHexDigit(c) && !this.isWhiteSpace(c)) {
                         this.pushback();
                         break;
-                    }
-                    else
+                    } else {
                         break;
+                    }
                 }
                 if (i == 6) {
                     c = this.peek();
-                    if (this.isWhiteSpace(c))
+                    if (this.isWhiteSpace(c)) {
                         this.read();
+                    }
                 }
                 return String.fromCharCode(code);
             }
             c = this.read();
-            if (c != "\n")
+            if (c != "\n") {
                 return c;
+            }
             return "";
         },
 
         gatherIdent:function (c) {
             var s = "";
-            if (c == CSS_ESCAPE)
+            if (c == CSS_ESCAPE) {
                 s += this.gatherEscape();
-            else
+            } else {
                 s += c;
+            }
             c = this.read();
-            while (c != -1
-                && (this.isIdent(c) || c == CSS_ESCAPE)) {
-                if (c == CSS_ESCAPE)
+            while (c != -1 && (this.isIdent(c) || c == CSS_ESCAPE)) {
+                if (c == CSS_ESCAPE) {
                     s += this.gatherEscape();
-                else
+                } else {
                     s += c;
+                }
                 c = this.read();
             }
-            if (c != -1)
+            if (c != -1) {
                 this.pushback();
+            }
             return s;
         },
 
@@ -1570,8 +1486,9 @@
                 s += c;
                 if (c == "*") {
                     c = this.read();
-                    if (c == -1)
+                    if (c == -1) {
                         break;
+                    }
                     if (c == "/") {
                         s += c;
                         break;
@@ -1587,29 +1504,29 @@
             var foundDot = false;
             while ((c = this.read()) != -1) {
                 if (c == ".") {
-                    if (foundDot)
+                    if (foundDot) {
                         break;
-                    else {
+                    } else {
                         s += c;
                         foundDot = true;
                     }
-                } else if (this.isDigit(c))
+                } else if (this.isDigit(c)) {
                     s += c;
-                else
+                } else {
                     break;
+                }
             }
 
             if (c != -1 && this.startsWithIdent(c, this.peek())) { // DIMENSION
                 var unit = this.gatherIdent(c);
                 s += unit;
                 return new jscsspToken(jscsspToken.DIMENSION_TYPE, s, unit);
-            }
-            else if (c == "%") {
+            } else if (c == "%") {
                 s += "%";
                 return new jscsspToken(jscsspToken.PERCENTAGE_TYPE, s);
-            }
-            else if (c != -1)
+            } else if (c != -1) {
                 this.pushback();
+            }
             return new jscsspToken(jscsspToken.NUMBER_TYPE, s);
         },
 
@@ -1621,31 +1538,29 @@
                 if (c == aStop && previousChar != CSS_ESCAPE) {
                     s += c;
                     break;
-                }
-                else if (c == CSS_ESCAPE) {
+                } else if (c == CSS_ESCAPE) {
                     c = this.peek();
-                    if (c == -1)
+                    if (c == -1) {
                         break;
-                    else if (c == "\n" || c == "\r" || c == "\f") {
+                    } else if (c == "\n" || c == "\r" || c == "\f") {
                         d = c;
                         c = this.read();
                         // special for Opera that preserves \r\n...
                         if (d == "\r") {
                             c = this.peek();
-                            if (c == "\n")
+                            if (c == "\n") {
                                 c = this.read();
+                            }
                         }
-                    }
-                    else {
+                    } else {
                         s += this.gatherEscape();
                         c = this.peek();
                     }
-                }
-                else if (c == "\n" || c == "\r" || c == "\f") {
+                } else if (c == "\n" || c == "\r" || c == "\f") {
                     break;
-                }
-                else
+                } else {
                     s += c;
+                }
 
                 previousChar = c;
             }
@@ -1660,12 +1575,14 @@
         eatWhiteSpace:function (c) {
             var s = c;
             while ((c = this.read()) != -1) {
-                if (!this.isWhiteSpace(c))
+                if (!this.isWhiteSpace(c)) {
                     break;
+                }
                 s += c;
             }
-            if (c != -1)
+            if (c != -1) {
                 this.pushback();
+            }
             return s;
         },
 
@@ -1675,40 +1592,45 @@
 
         nextToken:function () {
             var c = this.read();
-            if (c == -1)
+            if (c == -1) {
                 return new jscsspToken(jscsspToken.NULL_TYPE, null);
+            }
 
-            if (this.startsWithIdent(c, this.peek()))
+            if (this.startsWithIdent(c, this.peek())) {
                 return this.parseIdent(c);
+            }
 
             if (c == '@') {
                 var nextChar = this.read();
                 if (nextChar != -1) {
                     var followingChar = this.peek();
                     this.pushback();
-                    if (this.startsWithIdent(nextChar, followingChar))
+                    if (this.startsWithIdent(nextChar, followingChar)) {
                         return this.parseAtKeyword(c);
+                    }
                 }
             }
 
             if (c == "." || c == "+" || c == "-") {
                 var nextChar = this.peek();
-                if (this.isDigit(nextChar))
+                if (this.isDigit(nextChar)) {
                     return this.parseNumber(c);
-                else if (nextChar == "." && c != ".") {
+                } else if (nextChar == "." && c != ".") {
                     firstChar = this.read();
                     var secondChar = this.peek();
                     this.pushback();
-                    if (this.isDigit(secondChar))
+                    if (this.isDigit(secondChar)) {
                         return this.parseNumber(c);
+                    }
                 }
             }
             if (this.isDigit(c)) {
                 return this.parseNumber(c);
             }
 
-            if (c == "'" || c == '"')
+            if (c == "'" || c == '"') {
                 return this.parseString(c);
+            }
 
             if (this.isWhiteSpace(c)) {
                 var s = this.eatWhiteSpace(c);
@@ -1733,12 +1655,14 @@
                         default :
                             break;
                     }
-                } else if (nextChar != -1)
+                } else if (nextChar != -1) {
                     this.pushback();
+                }
             }
 
-            if (c == "/" && this.peek() == "*")
+            if (c == "/" && this.peek() == "*") {
                 return this.parseComment(c);
+            }
 
             return new jscsspToken(jscsspToken.SYMBOL_TYPE, c);
         }
@@ -2110,10 +2034,9 @@
             }
 
             this.mToken = this.mScanner.nextToken();
-            while (this.mToken &&
-                ((aSkipWS && this.mToken.isWhiteSpace()) ||
-                    (aSkipComment && this.mToken.isComment())))
+            while (this.mToken && ((aSkipWS && this.mToken.isWhiteSpace()) || (aSkipComment && this.mToken.isComment()))) {
                 this.mToken = this.mScanner.nextToken();
+            }
             return this.mToken;
         },
 
@@ -2137,24 +2060,18 @@
             var token = this.getToken(false, false);
             while (token.isNotNull()) {
                 aString += token.value;
-                if (token.isSymbol(";") && !blocks.length)
+                if (token.isSymbol(";") && !blocks.length) {
                     break;
-                else if (token.isSymbol("{")
-                    || token.isSymbol("(")
-                    || token.isSymbol("[")
-                    || token.type == "function") {
+                } else if (token.isSymbol("{") || token.isSymbol("(") || token.isSymbol("[") || token.type == "function") {
                     blocks.push(token.isFunction() ? "(" : token.value);
-                } else if (token.isSymbol("}")
-                    || token.isSymbol(")")
-                    || token.isSymbol("]")) {
+                } else if (token.isSymbol("}") || token.isSymbol(")") || token.isSymbol("]")) {
                     if (blocks.length) {
                         var ontop = blocks[blocks.length - 1];
-                        if ((token.isSymbol("}") && ontop == "{")
-                            || (token.isSymbol(")") && ontop == "(")
-                            || (token.isSymbol("]") && ontop == "[")) {
+                        if ((token.isSymbol("}") && ontop == "{") || (token.isSymbol(")") && ontop == "(") || (token.isSymbol("]") && ontop == "[")) {
                             blocks.pop();
-                            if (!blocks.length && token.isSymbol("}"))
+                            if (!blocks.length && token.isSymbol("}")) {
                                 break;
+                            }
                         }
                     }
                 }
@@ -2205,15 +2122,15 @@
                         rule.parentStyleSheet = aSheet;
                         aSheet.cssRules.push(rule);
                         return true;
-                    }
-                    else
+                    } else {
                         this.reportError(kCHARSET_RULE_MISSING_SEMICOLON);
-                }
-                else
+                    }
+                } else {
                     this.reportError(kCHARSET_RULE_CHARSET_IS_STRING);
-            }
-            else
+                }
+            } else {
                 this.reportError(kCHARSET_RULE_MISSING_WS);
+            }
 
             this.addUnknownAtRule(aSheet, s);
             return false;
@@ -2229,17 +2146,16 @@
             if (token.isString()) {
                 href = token.value;
                 s += " " + href;
-            }
-            else if (token.isFunction("url(")) {
+            } else if (token.isFunction("url(")) {
                 token = this.getToken(true, true);
                 var urlContent = this.parseURL(token);
                 if (urlContent) {
                     href = "url(" + urlContent;
                     s += " " + href;
                 }
-            }
-            else
+            } else {
                 this.reportError(kIMPORT_RULE_MISSING_URL);
+            }
 
             if (href) {
                 token = this.getToken(true, true);
@@ -2247,14 +2163,16 @@
                     s += " " + token.value;
                     media.push(token.value);
                     token = this.getToken(true, true);
-                    if (!token)
+                    if (!token) {
                         break;
+                    }
                     if (token.isSymbol(",")) {
                         s += ",";
                     } else if (token.isSymbol(";")) {
                         break;
-                    } else
+                    } else {
                         break;
+                    }
                     token = this.getToken(true, true);
                 }
 
@@ -2299,17 +2217,17 @@
                     if (token.isSymbol(",")) {
                         s += ",";
                     } else {
-                        if (token.isSymbol("{"))
+                        if (token.isSymbol("{")) {
                             this.ungetToken();
-                        else {
+                        } else {
                             // error...
                             token.type = jscsspToken.NULL_TYPE;
                             break;
                         }
                     }
-                } else if (token.isSymbol("{"))
+                } else if (token.isSymbol("{")) {
                     break;
-                else if (foundMedia) {
+                } else if (foundMedia) {
                     token.type = jscsspToken.NULL_TYPE;
                     // not a media list
                     break;
@@ -2502,39 +2420,29 @@
             var values = [];
             while (token.isNotNull()) {
 
-                if ((token.isSymbol(";")
-                    || token.isSymbol("}")
-                    || token.isSymbol("!"))
-                    && !blocks.length) {
-                    if (token.isSymbol("}"))
+                if ((token.isSymbol(";") || token.isSymbol("}") || token.isSymbol("!")) && !blocks.length) {
+                    if (token.isSymbol("}")) {
                         this.ungetToken();
+                    }
                     break;
                 }
 
                 if (token.isIdent(this.kINHERIT)) {
                     if (values.length) {
                         return "";
-                    }
-                    else {
+                    } else {
                         valueText = this.kINHERIT;
                         var value = new jscsspVariable(kJscsspINHERIT_VALUE, aSheet);
                         values.push(value);
                         token = this.getToken(true, true);
                         break;
                     }
-                }
-                else if (token.isSymbol("{")
-                    || token.isSymbol("(")
-                    || token.isSymbol("[")) {
+                } else if (token.isSymbol("{") || token.isSymbol("(") || token.isSymbol("[")) {
                     blocks.push(token.value);
-                }
-                else if (token.isSymbol("}")
-                    || token.isSymbol("]")) {
+                } else if (token.isSymbol("}") || token.isSymbol("]")) {
                     if (blocks.length) {
                         var ontop = blocks[blocks.length - 1];
-                        if ((token.isSymbol("}") && ontop == "{")
-                            || (token.isSymbol(")") && ontop == "(")
-                            || (token.isSymbol("]") && ontop == "[")) {
+                        if ((token.isSymbol("}") && ontop == "{") || (token.isSymbol(")") && ontop == "(") || (token.isSymbol("]") && ontop == "[")) {
                             blocks.pop();
                         }
                     }
@@ -2553,14 +2461,13 @@
                                 valueText += "var(" + name + ")";
                                 value.name = name;
                                 values.push(value);
-                            }
-                            else
+                            } else {
                                 return "";
-                        }
-                        else
+                            }
+                        } else {
                             return "";
-                    }
-                    else {
+                        }
+                    } else {
                         var fn = token.value;
                         token = this.getToken(false, true);
                         var arg = this.parseFunctionArgument(token);
@@ -2569,30 +2476,28 @@
                             var value = new jscsspVariable(kJscsspPRIMITIVE_VALUE, aSheet);
                             value.value = fn + arg;
                             values.push(value);
-                        }
-                        else
+                        } else {
                             return "";
+                        }
                     }
-                }
-                else if (token.isSymbol("#")) {
+                } else if (token.isSymbol("#")) {
                     var color = this.parseColor(token);
                     if (color) {
                         valueText += color;
                         var value = new jscsspVariable(kJscsspPRIMITIVE_VALUE, aSheet);
                         value.value = color;
                         values.push(value);
-                    }
-                    else
+                    } else {
                         return "";
-                }
-                else if (!token.isWhiteSpace() && !token.isSymbol(",")) {
+                    }
+                } else if (!token.isWhiteSpace() && !token.isSymbol(",")) {
                     var value = new jscsspVariable(kJscsspPRIMITIVE_VALUE, aSheet);
                     value.value = token.value;
                     values.push(value);
                     valueText += token.value;
-                }
-                else
+                } else {
                     valueText += token.value;
+                }
                 token = this.getToken(false, true);
             }
             if (values.length && valueText) {
@@ -2612,14 +2517,14 @@
             var values = [];
             while (true) {
 
-                if (!token.isNotNull())
+                if (!token.isNotNull()) {
                     break;
+                }
 
-                if (token.isSymbol(";")
-                    || (aAcceptPriority && token.isSymbol("!"))
-                    || token.isSymbol("}")) {
-                    if (token.isSymbol("}"))
+                if (token.isSymbol(";") || (aAcceptPriority && token.isSymbol("!")) || token.isSymbol("}")) {
+                    if (token.isSymbol("}")) {
                         this.ungetToken();
+                    }
                     break;
                 }
 
@@ -2629,14 +2534,11 @@
                     break;
                 }
 
-                else if (token.isDimension()
-                    || token.isNumber("0")
-                    || token.isPercentage()
-                    || token.isIdent("auto")) {
+                else if (token.isDimension() || token.isNumber("0") || token.isPercentage() || token.isIdent("auto")) {
                     values.push(token.value);
-                }
-                else
+                } else {
                     return "";
+                }
 
                 token = this.getToken(true, true);
             }
@@ -2687,14 +2589,14 @@
             var values = [];
             while (true) {
 
-                if (!token.isNotNull())
+                if (!token.isNotNull()) {
                     break;
+                }
 
-                if (token.isSymbol(";")
-                    || (aAcceptPriority && token.isSymbol("!"))
-                    || token.isSymbol("}")) {
-                    if (token.isSymbol("}"))
+                if (token.isSymbol(";") || (aAcceptPriority && token.isSymbol("!")) || token.isSymbol("}")) {
+                    if (token.isSymbol("}")) {
                         this.ungetToken();
+                    }
                     break;
                 }
 
@@ -2706,10 +2608,11 @@
 
                 else {
                     var color = this.parseColor(token);
-                    if (color)
+                    if (color) {
                         values.push(color);
-                    else
+                    } else {
                         return "";
+                    }
                 }
 
                 token = this.getToken(true, true);
@@ -2760,14 +2663,14 @@
             var values = [];
             while (true) {
 
-                if (!token.isNotNull())
+                if (!token.isNotNull()) {
                     break;
+                }
 
-                if (token.isSymbol(";")
-                    || (aAcceptPriority && token.isSymbol("!"))
-                    || token.isSymbol("}")) {
-                    if (token.isSymbol("}"))
+                if (token.isSymbol(";") || (aAcceptPriority && token.isSymbol("!")) || token.isSymbol("}")) {
+                    if (token.isSymbol("}")) {
                         this.ungetToken();
+                    }
                     break;
                 }
 
@@ -2775,19 +2678,21 @@
                     values.push(token.value);
                 }
 
-                else if (token.isIdent("none"))
+                else if (token.isIdent("none")) {
                     values.push(token.value);
+                }
 
                 else if (token.isFunction("url(")) {
                     var token = this.getToken(true, true);
                     var urlContent = this.parseURL(token);
-                    if (urlContent)
+                    if (urlContent) {
                         values.push("url(" + urlContent);
-                    else
+                    } else {
                         return "";
-                }
-                else
+                    }
+                } else {
                     return "";
+                }
 
                 token = this.getToken(true, true);
             }
@@ -2819,14 +2724,14 @@
             var values = [];
             while (true) {
 
-                if (!token.isNotNull())
+                if (!token.isNotNull()) {
                     break;
+                }
 
-                if (token.isSymbol(";")
-                    || (aAcceptPriority && token.isSymbol("!"))
-                    || token.isSymbol("}")) {
-                    if (token.isSymbol("}"))
+                if (token.isSymbol(";") || (aAcceptPriority && token.isSymbol("!")) || token.isSymbol("}")) {
+                    if (token.isSymbol("}")) {
                         this.ungetToken();
+                    }
                     break;
                 }
 
@@ -2834,13 +2739,11 @@
                     values.push(token.value);
                 }
 
-                else if (token.isDimensionOfUnit("ms")
-                    || token.isDimensionOfUnit("s")
-                    || token.isPercentage()
-                    || token.isNumber("0"))
+                else if (token.isDimensionOfUnit("ms") || token.isDimensionOfUnit("s") || token.isPercentage() || token.isNumber("0")) {
                     values.push(token.value);
-                else
+                } else {
                     return "";
+                }
 
                 token = this.getToken(true, true);
             }
@@ -2873,14 +2776,14 @@
             var values = [];
             while (true) {
 
-                if (!token.isNotNull())
+                if (!token.isNotNull()) {
                     break;
+                }
 
-                if (token.isSymbol(";")
-                    || (aAcceptPriority && token.isSymbol("!"))
-                    || token.isSymbol("}")) {
-                    if (token.isSymbol("}"))
+                if (token.isSymbol(";") || (aAcceptPriority && token.isSymbol("!")) || token.isSymbol("}")) {
+                    if (token.isSymbol("}")) {
                         this.ungetToken();
+                    }
                     break;
                 }
 
@@ -2888,13 +2791,11 @@
                     values.push(token.value);
                 }
 
-                else if (token.isDimension()
-                    || token.isNumber("0")
-                    || (token.isIdent() && token.value in this.kBORDER_WIDTH_NAMES)) {
+                else if (token.isDimension() || token.isNumber("0") || (token.isIdent() && token.value in this.kBORDER_WIDTH_NAMES)) {
                     values.push(token.value);
-                }
-                else
+                } else {
                     return "";
+                }
 
                 token = this.getToken(true, true);
             }
@@ -2945,14 +2846,14 @@
             var values = [];
             while (true) {
 
-                if (!token.isNotNull())
+                if (!token.isNotNull()) {
                     break;
+                }
 
-                if (token.isSymbol(";")
-                    || (aAcceptPriority && token.isSymbol("!"))
-                    || token.isSymbol("}")) {
-                    if (token.isSymbol("}"))
+                if (token.isSymbol(";") || (aAcceptPriority && token.isSymbol("!")) || token.isSymbol("}")) {
+                    if (token.isSymbol("}")) {
                         this.ungetToken();
+                    }
                     break;
                 }
 
@@ -2962,9 +2863,9 @@
 
                 else if (token.isIdent() && token.value in this.kBORDER_STYLE_NAMES) {
                     values.push(token.value);
-                }
-                else
+                } else {
                     return "";
+                }
 
                 token = this.getToken(true, true);
             }
@@ -3012,43 +2913,38 @@
             var bColor = null;
 
             while (true) {
-                if (!token.isNotNull())
-                    break;
-
-                if (token.isSymbol(";")
-                    || (aAcceptPriority && token.isSymbol("!"))
-                    || token.isSymbol("}")) {
-                    if (token.isSymbol("}"))
-                        this.ungetToken();
+                if (!token.isNotNull()) {
                     break;
                 }
 
-                else if (!bWidth && !bStyle && !bColor
-                    && token.isIdent(this.kINHERIT)) {
+                if (token.isSymbol(";") || (aAcceptPriority && token.isSymbol("!")) || token.isSymbol("}")) {
+                    if (token.isSymbol("}")) {
+                        this.ungetToken();
+                    }
+                    break;
+                }
+
+                else if (!bWidth && !bStyle && !bColor && token.isIdent(this.kINHERIT)) {
                     bWidth = this.kINHERIT;
                     bStyle = this.kINHERIT;
                     bColor = this.kINHERIT;
                 }
 
-                else if (!bWidth &&
-                    (token.isDimension()
-                        || (token.isIdent() && token.value in this.kBORDER_WIDTH_NAMES)
-                        || token.isNumber("0"))) {
+                else if (!bWidth && (token.isDimension() || (token.isIdent() && token.value in this.kBORDER_WIDTH_NAMES) || token.isNumber("0"))) {
                     bWidth = token.value;
                 }
 
-                else if (!bStyle &&
-                    (token.isIdent() && token.value in this.kBORDER_STYLE_NAMES)) {
+                else if (!bStyle && (token.isIdent() && token.value in this.kBORDER_STYLE_NAMES)) {
                     bStyle = token.value;
                 }
 
                 else {
-                    var color = (aProperty == "outline" && token.isIdent("invert"))
-                        ? "invert" : this.parseColor(token);
-                    if (!bColor && color)
+                    var color = (aProperty == "outline" && token.isIdent("invert")) ? "invert" : this.parseColor(token);
+                    if (!bColor && color) {
                         bColor = color;
-                    else
+                    } else {
                         return "";
+                    }
                 }
                 token = this.getToken(true, true);
             }
@@ -3070,9 +2966,9 @@
                 addPropertyToDecl(this, aDecl, "border-right", bWidth, bStyle, bColor);
                 addPropertyToDecl(this, aDecl, "border-bottom", bWidth, bStyle, bColor);
                 addPropertyToDecl(this, aDecl, "border-left", bWidth, bStyle, bColor);
-            }
-            else
+            } else {
                 addPropertyToDecl(this, aDecl, aProperty, bWidth, bStyle, bColor);
+            }
             return bWidth + " " + bStyle + " " + bColor;
         },
 
@@ -3089,19 +2985,18 @@
 
             while (true) {
 
-                if (!token.isNotNull())
-                    break;
-
-                if (token.isSymbol(";")
-                    || (aAcceptPriority && token.isSymbol("!"))
-                    || token.isSymbol("}")) {
-                    if (token.isSymbol("}"))
-                        this.ungetToken();
+                if (!token.isNotNull()) {
                     break;
                 }
 
-                else if (!bgColor && !bgRepeat && !bgAttachment && !bgImage && !bgPosition
-                    && token.isIdent(this.kINHERIT)) {
+                if (token.isSymbol(";") || (aAcceptPriority && token.isSymbol("!")) || token.isSymbol("}")) {
+                    if (token.isSymbol("}")) {
+                        this.ungetToken();
+                    }
+                    break;
+                }
+
+                else if (!bgColor && !bgRepeat && !bgAttachment && !bgImage && !bgPosition && token.isIdent(this.kINHERIT)) {
                     bgColor = this.kINHERIT;
                     bgRepeat = this.kINHERIT;
                     bgAttachment = this.kINHERIT;
@@ -3110,74 +3005,59 @@
                 }
 
                 else {
-                    if (!bgAttachment &&
-                        (token.isIdent("scroll")
-                            || token.isIdent("fixed"))) {
+                    if (!bgAttachment && (token.isIdent("scroll") || token.isIdent("fixed"))) {
                         bgAttachment = token.value;
                     }
 
-                    else if (!bgPosition &&
-                        ((token.isIdent() && token.value in kPos)
-                            || token.isDimension()
-                            || token.isNumber("0")
-                            || token.isPercentage())) {
+                    else if (!bgPosition && ((token.isIdent() && token.value in kPos) || token.isDimension() || token.isNumber("0") || token.isPercentage())) {
                         bgPosition = token.value;
                         token = this.getToken(true, true);
                         if (token.isDimension() || token.isNumber("0") || token.isPercentage()) {
                             bgPosition += " " + token.value;
-                        }
-                        else if (token.isIdent() && token.value in kPos) {
-                            if ((bgPosition in kHPos && token.value in kHPos) ||
-                                (bgPosition in kVPos && token.value in kVPos))
+                        } else if (token.isIdent() && token.value in kPos) {
+                            if ((bgPosition in kHPos && token.value in kHPos) || (bgPosition in kVPos && token.value in kVPos)) {
                                 return "";
+                            }
                             bgPosition += " " + token.value;
-                        }
-                        else {
+                        } else {
                             this.ungetToken();
                             bgPosition += " center";
                         }
                     }
 
-                    else if (!bgRepeat &&
-                        (token.isIdent("repeat")
-                            || token.isIdent("repeat-x")
-                            || token.isIdent("repeat-y")
-                            || token.isIdent("no-repeat"))) {
+                    else if (!bgRepeat && (token.isIdent("repeat") || token.isIdent("repeat-x") || token.isIdent("repeat-y") || token.isIdent("no-repeat"))) {
                         bgRepeat = token.value;
                     }
 
-                    else if (!bgImage &&
-                        (token.isFunction("url(")
-                            || token.isIdent("none"))) {
+                    else if (!bgImage && (token.isFunction("url(") || token.isIdent("none"))) {
                         bgImage = token.value;
                         if (token.isFunction("url(")) {
                             token = this.getToken(true, true);
                             var url = this.parseURL(token); // TODO
-                            if (url)
+                            if (url) {
                                 bgImage += url;
-                            else
+                            } else {
                                 return "";
+                            }
                         }
                     }
 
-                    else if (!bgImage &&
-                        (token.isFunction("-moz-linear-gradient(")
-                            || token.isFunction("-moz-radial-gradient(")
-                            || token.isFunction("-moz-repeating-linear-gradient(")
-                            || token.isFunction("-moz-repeating-radial-gradient("))) {
+                    else if (!bgImage && (token.isFunction("-moz-linear-gradient(") || token.isFunction("-moz-radial-gradient(") || token.isFunction("-moz-repeating-linear-gradient(") || token.isFunction("-moz-repeating-radial-gradient("))) {
                         var gradient = CssInspector.parseGradient(this, token);
-                        if (gradient)
+                        if (gradient) {
                             bgImage = CssInspector.serializeGradient(gradient);
-                        else
+                        } else {
                             return "";
+                        }
                     }
 
                     else {
                         var color = this.parseColor(token);
-                        if (!bgColor && color)
+                        if (!bgColor && color) {
                             bgColor = color;
-                        else
+                        } else {
                             return "";
+                        }
                     }
 
                 }
@@ -3210,31 +3090,28 @@
 
             while (true) {
 
-                if (!token.isNotNull())
-                    break;
-
-                if (token.isSymbol(";")
-                    || (aAcceptPriority && token.isSymbol("!"))
-                    || token.isSymbol("}")) {
-                    if (token.isSymbol("}"))
-                        this.ungetToken();
+                if (!token.isNotNull()) {
                     break;
                 }
 
-                else if (!lType && !lPosition && !lImage
-                    && token.isIdent(this.kINHERIT)) {
+                if (token.isSymbol(";") || (aAcceptPriority && token.isSymbol("!")) || token.isSymbol("}")) {
+                    if (token.isSymbol("}")) {
+                        this.ungetToken();
+                    }
+                    break;
+                }
+
+                else if (!lType && !lPosition && !lImage && token.isIdent(this.kINHERIT)) {
                     lType = this.kINHERIT;
                     lPosition = this.kINHERIT;
                     lImage = this.kINHERIT;
                 }
 
-                else if (!lType &&
-                    (token.isIdent() && token.value in this.kLIST_STYLE_TYPE_NAMES)) {
+                else if (!lType && (token.isIdent() && token.value in this.kLIST_STYLE_TYPE_NAMES)) {
                     lType = token.value;
                 }
 
-                else if (!lPosition &&
-                    (token.isIdent() && token.value in kPosition)) {
+                else if (!lPosition && (token.isIdent() && token.value in kPosition)) {
                     lPosition = token.value;
                 }
 
@@ -3243,12 +3120,12 @@
                     var urlContent = this.parseURL(token);
                     if (urlContent) {
                         lImage = "url(" + urlContent;
-                    }
-                    else
+                    } else {
                         return "";
-                }
-                else if (!token.isIdent("none"))
+                    }
+                } else if (!token.isIdent("none")) {
                     return "";
+                }
 
                 token = this.getToken(true, true);
             }
@@ -3290,21 +3167,18 @@
             var normalCount = 0;
             while (true) {
 
-                if (!token.isNotNull())
-                    break;
-
-                if (token.isSymbol(";")
-                    || (aAcceptPriority && token.isSymbol("!"))
-                    || token.isSymbol("}")) {
-                    if (token.isSymbol("}"))
-                        this.ungetToken();
+                if (!token.isNotNull()) {
                     break;
                 }
 
-                else if (!fStyle && !fVariant && !fWeight
-                    && !fSize && !fLineHeight && !fFamily
-                    && !fSystem
-                    && token.isIdent(this.kINHERIT)) {
+                if (token.isSymbol(";") || (aAcceptPriority && token.isSymbol("!")) || token.isSymbol("}")) {
+                    if (token.isSymbol("}")) {
+                        this.ungetToken();
+                    }
+                    break;
+                }
+
+                else if (!fStyle && !fVariant && !fWeight && !fSize && !fLineHeight && !fFamily && !fSystem && token.isIdent(this.kINHERIT)) {
                     fStyle = this.kINHERIT;
                     fVariant = this.kINHERIT;
                     fWeight = this.kINHERIT;
@@ -3321,82 +3195,67 @@
                     }
 
                     else {
-                        if (!fStyle
-                            && token.isIdent()
-                            && (token.value in kStyle)) {
+                        if (!fStyle && token.isIdent() && (token.value in kStyle)) {
                             fStyle = token.value;
                         }
 
-                        else if (!fVariant
-                            && token.isIdent()
-                            && (token.value in kVariant)) {
+                        else if (!fVariant && token.isIdent() && (token.value in kVariant)) {
                             fVariant = token.value;
                         }
 
-                        else if (!fWeight
-                            && (token.isIdent() || token.isNumber())
-                            && (token.value in kWeight)) {
+                        else if (!fWeight && (token.isIdent() || token.isNumber()) && (token.value in kWeight)) {
                             fWeight = token.value;
                         }
 
-                        else if (!fSize
-                            && ((token.isIdent() && (token.value in kSize))
-                            || token.isDimension()
-                            || token.isPercentage())) {
+                        else if (!fSize && ((token.isIdent() && (token.value in kSize)) || token.isDimension() || token.isPercentage())) {
                             fSize = token.value;
                             var token = this.getToken(false, false);
                             if (token.isSymbol("/")) {
                                 token = this.getToken(false, false);
-                                if (!fLineHeight &&
-                                    (token.isDimension() || token.isNumber() || token.isPercentage())) {
+                                if (!fLineHeight && (token.isDimension() || token.isNumber() || token.isPercentage())) {
                                     fLineHeight = token.value;
-                                }
-                                else
+                                } else {
                                     return "";
-                            }
-                            else
+                                }
+                            } else {
                                 this.ungetToken();
+                            }
                         }
 
                         else if (token.isIdent("normal")) {
                             normalCount++;
-                            if (normalCount > 3)
+                            if (normalCount > 3) {
                                 return "";
+                            }
                         }
 
                         else if (!fFamily && // *MUST* be last to be tested here
-                            (token.isString()
-                                || token.isIdent())) {
+                            (token.isString() || token.isIdent())) {
                             var lastWasComma = false;
                             while (true) {
-                                if (!token.isNotNull())
+                                if (!token.isNotNull()) {
                                     break;
-                                else if (token.isSymbol(";")
-                                    || (aAcceptPriority && token.isSymbol("!"))
-                                    || token.isSymbol("}")) {
+                                } else if (token.isSymbol(";") || (aAcceptPriority && token.isSymbol("!")) || token.isSymbol("}")) {
                                     this.ungetToken();
                                     break;
-                                }
-                                else if (token.isIdent() && token.value in kFamily) {
+                                } else if (token.isIdent() && token.value in kFamily) {
                                     var value = new jscsspVariable(kJscsspPRIMITIVE_VALUE, null);
                                     value.value = token.value;
                                     fFamilyValues.push(value);
                                     fFamily += token.value;
                                     break;
-                                }
-                                else if (token.isString() || token.isIdent()) {
+                                } else if (token.isString() || token.isIdent()) {
                                     var value = new jscsspVariable(kJscsspPRIMITIVE_VALUE, null);
                                     value.value = token.value;
                                     fFamilyValues.push(value);
                                     fFamily += token.value;
                                     lastWasComma = false;
-                                }
-                                else if (!lastWasComma && token.isSymbol(",")) {
+                                } else if (!lastWasComma && token.isSymbol(",")) {
                                     fFamily += ", ";
                                     lastWasComma = true;
-                                }
-                                else
+                                } else {
                                     return "";
+                                }
                                 token = this.getToken(true, true);
                             }
                         }
@@ -3466,8 +3325,7 @@
             if (token.isString()) {
                 value += token.value;
                 token = this.getToken(true, true);
-            }
-            else
+            } else {
                 while (true) {
                     if (!token.isNotNull()) {
                         this.reportError(kURL_EOF);
@@ -3488,6 +3346,7 @@
                     value += token.value;
                     token = this.getToken(false, false);
                 }
+            }
 
             if (token.isSymbol(")")) {
                 return value + ")";
@@ -3500,134 +3359,154 @@
             if (token.isString()) {
                 value += token.value;
                 token = this.getToken(true, true);
-            }
-            else {
+            } else {
                 var parenthesis = 1;
                 while (true) {
-                    if (!token.isNotNull())
+                    if (!token.isNotNull()) {
                         return "";
-                    if (token.isFunction() || token.isSymbol("("))
+                    }
+                    if (token.isFunction() || token.isSymbol("(")) {
                         parenthesis++;
+                    }
                     if (token.isSymbol(")")) {
                         parenthesis--;
-                        if (!parenthesis)
+                        if (!parenthesis) {
                             break;
+                        }
                     }
                     value += token.value;
                     token = this.getToken(false, false);
                 }
             }
 
-            if (token.isSymbol(")"))
+            if (token.isSymbol(")")) {
                 return value + ")";
+            }
             return "";
         },
 
         parseColor:function (token) {
             var color = "";
-            if (token.isFunction("rgb(")
-                || token.isFunction("rgba(")) {
+            if (token.isFunction("rgb(") || token.isFunction("rgba(")) {
                 color = token.value;
                 var isRgba = token.isFunction("rgba(")
                 token = this.getToken(true, true);
-                if (!token.isNumber() && !token.isPercentage())
+                if (!token.isNumber() && !token.isPercentage()) {
                     return "";
+                }
                 color += token.value;
                 token = this.getToken(true, true);
-                if (!token.isSymbol(","))
+                if (!token.isSymbol(",")) {
                     return "";
+                }
                 color += ", ";
 
                 token = this.getToken(true, true);
-                if (!token.isNumber() && !token.isPercentage())
+                if (!token.isNumber() && !token.isPercentage()) {
                     return "";
+                }
                 color += token.value;
                 token = this.getToken(true, true);
-                if (!token.isSymbol(","))
+                if (!token.isSymbol(",")) {
                     return "";
+                }
                 color += ", ";
 
                 token = this.getToken(true, true);
-                if (!token.isNumber() && !token.isPercentage())
+                if (!token.isNumber() && !token.isPercentage()) {
                     return "";
+                }
                 color += token.value;
 
                 if (isRgba) {
                     token = this.getToken(true, true);
-                    if (!token.isSymbol(","))
+                    if (!token.isSymbol(",")) {
                         return "";
+                    }
                     color += ", ";
 
                     token = this.getToken(true, true);
-                    if (!token.isNumber())
+                    if (!token.isNumber()) {
                         return "";
+                    }
                     color += token.value;
                 }
 
                 token = this.getToken(true, true);
-                if (!token.isSymbol(")"))
+                if (!token.isSymbol(")")) {
                     return "";
+                }
                 color += token.value;
             }
 
-            else if (token.isFunction("hsl(")
-                || token.isFunction("hsla(")) {
+            else if (token.isFunction("hsl(") || token.isFunction("hsla(")) {
                 color = token.value;
                 var isHsla = token.isFunction("hsla(")
                 token = this.getToken(true, true);
-                if (!token.isNumber())
+                if (!token.isNumber()) {
                     return "";
+                }
                 color += token.value;
                 token = this.getToken(true, true);
-                if (!token.isSymbol(","))
+                if (!token.isSymbol(",")) {
                     return "";
+                }
                 color += ", ";
 
                 token = this.getToken(true, true);
-                if (!token.isPercentage())
+                if (!token.isPercentage()) {
                     return "";
+                }
                 color += token.value;
                 token = this.getToken(true, true);
-                if (!token.isSymbol(","))
+                if (!token.isSymbol(",")) {
                     return "";
+                }
                 color += ", ";
 
                 token = this.getToken(true, true);
-                if (!token.isPercentage())
+                if (!token.isPercentage()) {
                     return "";
+                }
                 color += token.value;
 
                 if (isHsla) {
                     token = this.getToken(true, true);
-                    if (!token.isSymbol(","))
+                    if (!token.isSymbol(",")) {
                         return "";
+                    }
                     color += ", ";
 
                     token = this.getToken(true, true);
-                    if (!token.isNumber())
+                    if (!token.isNumber()) {
                         return "";
+                    }
                     color += token.value;
                 }
 
                 token = this.getToken(true, true);
-                if (!token.isSymbol(")"))
+                if (!token.isSymbol(")")) {
                     return "";
+                }
                 color += token.value;
             }
 
-            else if (token.isIdent()
-                && (token.value in this.kCOLOR_NAMES))
+            else if (token.isIdent() && (token.value in this.kCOLOR_NAMES)) {
                 color = token.value;
+            }
 
             else if (token.isSymbol("#")) {
                 token = this.getHexValue();
-                if (!token.isHex())
+                if (!token.isHex()) {
                     return "";
+                }
                 var length = token.value.length;
-                if (length != 3 && length != 6)
+                if (length != 3 && length != 6) {
                     return "";
-                if (token.value.match(/[a-fA-F0-9]/g).length != length)
+                }
+                if (token.value.match(/[a-fA-F0-9]/g).length != length) {
                     return "";
+                }
                 color = "#" + token.value;
             }
             return color;
@@ -3644,7 +3523,7 @@
 
                     var value = "";
                     var declarations = [];
-                    if (aExpandShorthands)
+                    if (aExpandShorthands) {
                         switch (descriptor) {
                             case "background":
                                 value = this.parseBackgroundShorthand(token, declarations, aAcceptPriority);
@@ -3686,8 +3565,9 @@
                                 value = this.parseDefaultPropertyValue(token, declarations, aAcceptPriority, descriptor, aSheet);
                                 break;
                         }
-                    else
+                    } else {
                         value = this.parseDefaultPropertyValue(token, declarations, aAcceptPriority, descriptor, aSheet);
+                    }
                     token = this.currentToken();
                     if (value) // no error above
                     {
@@ -3698,15 +3578,18 @@
                                 priority = true;
                                 token = this.getToken(true, true);
                                 if (token.isSymbol(";") || token.isSymbol("}")) {
-                                    if (token.isSymbol("}"))
+                                    if (token.isSymbol("}")) {
                                         this.ungetToken();
+                                    }
+                                } else {
+                                    return "";
                                 }
-                                else return "";
+                            } else {
+                                return "";
                             }
-                            else return "";
-                        }
-                        else if (token.isNotNull() && !token.isSymbol(";") && !token.isSymbol("}"))
+                        } else if (token.isNotNull() && !token.isSymbol(";") && !token.isSymbol("}")) {
                             return "";
+                        }
                         for (var i = 0; i < declarations.length; i++) {
                             declarations[i].priority = priority;
                             aDecl.push(declarations[i]);
@@ -3714,8 +3597,7 @@
                         return descriptor + ": " + value + ";";
                     }
                 }
-            }
-            else if (aToken.isComment()) {
+            } else if (aToken.isComment()) {
                 if (this.mPreserveComments) {
                     this.forgetState();
                     var comment = new jscsspComment();
@@ -3733,22 +3615,16 @@
             while (token.isNotNull()) {
                 s += token.value;
                 if ((token.isSymbol(";") || token.isSymbol("}")) && !blocks.length) {
-                    if (token.isSymbol("}"))
+                    if (token.isSymbol("}")) {
                         this.ungetToken();
+                    }
                     break;
-                } else if (token.isSymbol("{")
-                    || token.isSymbol("(")
-                    || token.isSymbol("[")
-                    || token.isFunction()) {
+                } else if (token.isSymbol("{") || token.isSymbol("(") || token.isSymbol("[") || token.isFunction()) {
                     blocks.push(token.isFunction() ? "(" : token.value);
-                } else if (token.isSymbol("}")
-                    || token.isSymbol(")")
-                    || token.isSymbol("]")) {
+                } else if (token.isSymbol("}") || token.isSymbol(")") || token.isSymbol("]")) {
                     if (blocks.length) {
                         var ontop = blocks[blocks.length - 1];
-                        if ((token.isSymbol("}") && ontop == "{")
-                            || (token.isSymbol(")") && ontop == "(")
-                            || (token.isSymbol("]") && ontop == "[")) {
+                        if ((token.isSymbol("}") && ontop == "{") || (token.isSymbol(")") && ontop == "(") || (token.isSymbol("]") && ontop == "[")) {
                             blocks.pop();
                         }
                     }
@@ -3776,17 +3652,17 @@
                     if (token.isSymbol(",")) {
                         s += ",";
                     } else {
-                        if (token.isSymbol("{"))
+                        if (token.isSymbol("{")) {
                             this.ungetToken();
-                        else {
+                        } else {
                             // error...
                             token.type = jscsspToken.NULL_TYPE;
                             break;
                         }
                     }
-                } else if (token.isSymbol("{"))
+                } else if (token.isSymbol("{")) {
                     break;
-                else if (foundMedia) {
+                } else if (foundMedia) {
                     token.type = jscsspToken.NULL_TYPE;
                     // not a media list
                     break;
@@ -3808,8 +3684,9 @@
                         break;
                     } else {
                         var r = this.parseStyleRule(token, mediaRule, true);
-                        if (r)
+                        if (r) {
                             s += r;
+                        }
                     }
                     token = this.getToken(true, false);
                 }
@@ -3865,8 +3742,7 @@
                         token = this.getToken(true, false);
                     }
                 }
-            }
-            else {
+            } else {
                 // selector is invalid so the whole rule is invalid with it
             }
 
@@ -3876,10 +3752,11 @@
                 rule.parsedCssText = s;
                 rule.declarations = declarations;
                 rule.mSelectorText = selector;
-                if (aIsInsideMediaRule)
+                if (aIsInsideMediaRule) {
                     rule.parentRule = aOwner;
-                else
+                } else {
                     rule.parentStyleSheet = aOwner;
+                }
                 aOwner.cssRules.push(rule);
                 return s;
             }
@@ -3898,8 +3775,9 @@
             var combinatorFound = false;
             while (true) {
                 if (!token.isNotNull()) {
-                    if (aParseSelectorOnly)
+                    if (aParseSelectorOnly) {
                         return {selector:s, specificity:specificity };
+                    }
                     return "";
                 }
 
@@ -3907,8 +3785,9 @@
                     // end of selector
                     valid = !combinatorFound;
                     // don't unget if invalid since addUnknownRule is going to restore state anyway
-                    if (valid)
+                    if (valid) {
                         this.ungetToken();
+                    }
                     break;
                 }
 
@@ -3920,39 +3799,33 @@
                     continue;
                 }
                 // now combinators and grouping...
-                else if (!combinatorFound
-                    && (token.isWhiteSpace()
-                    || token.isSymbol(">")
-                    || token.isSymbol("+")
-                    || token.isSymbol("~"))) {
+                else if (!combinatorFound && (token.isWhiteSpace() || token.isSymbol(">") || token.isSymbol("+") || token.isSymbol("~"))) {
                     if (token.isWhiteSpace()) {
                         s += " ";
                         var nextToken = this.lookAhead(true, true);
                         if (!nextToken.isNotNull()) {
-                            if (aParseSelectorOnly)
+                            if (aParseSelectorOnly) {
                                 return {selector:s, specificity:specificity };
+                            }
                             return "";
                         }
-                        if (nextToken.isSymbol(">")
-                            || nextToken.isSymbol("+")
-                            || nextToken.isSymbol("~")) {
+                        if (nextToken.isSymbol(">") || nextToken.isSymbol("+") || nextToken.isSymbol("~")) {
                             token = this.getToken(true, true);
                             s += token.value + " ";
                             combinatorFound = true;
                         }
-                    }
-                    else {
+                    } else {
                         s += token.value;
                         combinatorFound = true;
                     }
                     isFirstInChain = true;
                     token = this.getToken(true, true);
                     continue;
-                }
-                else {
+                } else {
                     var simpleSelector = this.parseSimpleSelector(token, isFirstInChain, true);
-                    if (!simpleSelector)
-                        break; // error
+                    if (!simpleSelector) {
+                        break;
+                    } // error
                     s += simpleSelector.selector;
                     specificity.b += simpleSelector.specificity.b;
                     specificity.c += simpleSelector.specificity.c;
@@ -3989,8 +3862,7 @@
             var s = "";
             var specificity = {a:0, b:0, c:0, d:0}; // CSS 2.1 section 6.4.3
 
-            if (isFirstInChain
-                && (token.isSymbol("*") || token.isSymbol("|") || token.isIdent())) {
+            if (isFirstInChain && (token.isSymbol("*") || token.isSymbol("|") || token.isIdent())) {
                 // type or universal selector
                 if (token.isSymbol("*") || token.isIdent()) {
                     // we don't know yet if it's a prefix or a universal
@@ -4006,26 +3878,33 @@
                             // ok we now have a type element or universal
                             // selector
                             s += token.value;
-                            if (token.isIdent())
+                            if (token.isIdent()) {
                                 specificity.d++;
+                            }
                         } else
                         // oops that's an error...
+                        {
                             return null;
+                        }
                     } else {
                         this.ungetToken();
-                        if (isIdent)
+                        if (isIdent) {
                             specificity.d++;
+                        }
                     }
                 } else if (token.isSymbol("|")) {
                     s += token.value;
                     token = this.getToken(false, true);
                     if (token.isIdent() || token.isSymbol("*")) {
                         s += token.value;
-                        if (token.isIdent())
+                        if (token.isIdent()) {
                             specificity.d++;
+                        }
                     } else
                     // oops that's an error
+                    {
                         return null;
+                    }
                 }
             }
 
@@ -4035,13 +3914,14 @@
                 token = this.getToken(false, true);
                 if (token.isIdent()) {
                     s += token.value;
-                    if (isClass)
+                    if (isClass) {
                         specificity.c++;
-                    else
+                    } else {
                         specificity.b++;
-                }
-                else
+                    }
+                } else {
                     return null;
+                }
             }
 
             else if (token.isSymbol(":")) {
@@ -4053,43 +3933,46 @@
                 }
                 if (token.isIdent()) {
                     s += token.value;
-                    if (this.isPseudoElement(token.value))
+                    if (this.isPseudoElement(token.value)) {
                         specificity.d++;
-                    else
-                        specificity.c++;
-                }
-                else if (token.isFunction()) {
-                    s += token.value;
-                    if (token.isFunction(":not(")) {
-                        if (!canNegate)
-                            return null;
-                        token = this.getToken(true, true);
-                        var simpleSelector = this.parseSimpleSelector(token, isFirstInChain, false);
-                        if (!simpleSelector)
-                            return null;
-                        else {
-                            s += simpleSelector.selector;
-                            token = this.getToken(true, true);
-                            if (token.isSymbol(")"))
-                                s += ")";
-                            else
-                                return null;
-                        }
+                    } else {
                         specificity.c++;
                     }
-                    else {
+                } else if (token.isFunction()) {
+                    s += token.value;
+                    if (token.isFunction(":not(")) {
+                        if (!canNegate) {
+                            return null;
+                        }
+                        token = this.getToken(true, true);
+                        var simpleSelector = this.parseSimpleSelector(token, isFirstInChain, false);
+                        if (!simpleSelector) {
+                            return null;
+                        } else {
+                            s += simpleSelector.selector;
+                            token = this.getToken(true, true);
+                            if (token.isSymbol(")")) {
+                                s += ")";
+                            } else {
+                                return null;
+                            }
+                        }
+                        specificity.c++;
+                    } else {
                         while (true) {
                             token = this.getToken(false, true);
                             if (token.isSymbol(")")) {
                                 s += ")";
                                 break;
-                            } else
+                            } else {
                                 s += token.value;
+                            }
                         }
                         specificity.c++;
                     }
-                } else
+                } else {
                     return null;
+                }
 
             } else if (token.isSymbol("[")) {
                 s += "[";
@@ -4100,62 +3983,60 @@
                     if (token.isSymbol("|")) {
                         s += "|";
                         token = this.getToken(true, true);
-                        if (token.isIdent())
+                        if (token.isIdent()) {
                             s += token.value;
-                        else
+                        } else {
                             return null;
-                    } else
+                        }
+                    } else {
                         this.ungetToken();
+                    }
                 } else if (token.isSymbol("|")) {
                     s += "|";
                     token = this.getToken(true, true);
-                    if (token.isIdent())
+                    if (token.isIdent()) {
                         s += token.value;
-                    else
+                    } else {
                         return null;
-                }
-                else
+                    }
+                } else {
                     return null;
+                }
 
                 // nothing, =, *=, $=, ^=, |=
                 token = this.getToken(true, true);
-                if (token.isIncludes()
-                    || token.isDashmatch()
-                    || token.isBeginsmatch()
-                    || token.isEndsmatch()
-                    || token.isContainsmatch()
-                    || token.isSymbol("=")) {
+                if (token.isIncludes() || token.isDashmatch() || token.isBeginsmatch() || token.isEndsmatch() || token.isContainsmatch() || token.isSymbol("=")) {
                     s += token.value;
                     token = this.getToken(true, true);
                     if (token.isString() || token.isIdent()) {
                         s += token.value;
                         token = this.getToken(true, true);
-                    }
-                    else
+                    } else {
                         return null;
+                    }
 
                     if (token.isSymbol("]")) {
                         s += token.value;
                         specificity.c++;
-                    }
-                    else
+                    } else {
                         return null;
-                }
-                else if (token.isSymbol("]")) {
+                    }
+                } else if (token.isSymbol("]")) {
                     s += token.value;
                     specificity.c++;
-                }
-                else
+                } else {
                     return null;
+                }
 
-            }
-            else if (token.isWhiteSpace()) {
+            } else if (token.isWhiteSpace()) {
                 var t = this.lookAhead(true, true);
-                if (t.isSymbol('{'))
+                if (t.isSymbol('{')) {
                     return ""
+                }
             }
-            if (s)
+            if (s) {
                 return {selector:s, specificity:specificity };
+            }
             return null;
         },
 
@@ -4179,8 +4060,9 @@
         },
 
         parse:function (aString, aTryToPreserveWhitespaces, aTryToPreserveComments) {
-            if (!aString)
-                return null; // early way out if we can
+            if (!aString) {
+                return null;
+            } // early way out if we can
 
             this.mPreserveWS = aTryToPreserveWhitespaces;
             this.mPreserveComments = aTryToPreserveComments;
@@ -4190,8 +4072,9 @@
 
             // @charset can only appear at first char of the stylesheet
             var token = this.getToken(false, false);
-            if (!token.isNotNull())
+            if (!token.isNotNull()) {
                 return;
+            }
             if (token.isAtRule("@charset")) {
                 this.parseCharsetRule(token, sheet);
                 token = this.getToken(false, false);
@@ -4201,70 +4084,69 @@
             var foundImportRules = false;
             var foundNameSpaceRules = false;
             while (true) {
-                if (!token.isNotNull())
+                if (!token.isNotNull()) {
                     break;
+                }
                 if (token.isWhiteSpace()) {
-                    if (aTryToPreserveWhitespaces)
+                    if (aTryToPreserveWhitespaces) {
                         this.addWhitespace(sheet, token.value);
+                    }
                 }
 
                 else if (token.isComment()) {
-                    if (this.mPreserveComments)
+                    if (this.mPreserveComments) {
                         this.addComment(sheet, token.value);
+                    }
                 }
 
                 else if (token.isAtRule()) {
                     if (token.isAtRule("@variables")) {
-                        if (!foundImportRules && !foundStyleRules)
+                        if (!foundImportRules && !foundStyleRules) {
                             this.parseVariablesRule(token, sheet);
-                        else {
+                        } else {
                             this.reportError(kVARIABLES_RULE_POSITION);
                             this.addUnknownAtRule(sheet, token.value);
                         }
-                    }
-                    else if (token.isAtRule("@import")) {
+                    } else if (token.isAtRule("@import")) {
                         // @import rules MUST occur before all style and namespace
                         // rules
-                        if (!foundStyleRules && !foundNameSpaceRules)
+                        if (!foundStyleRules && !foundNameSpaceRules) {
                             foundImportRules = this.parseImportRule(token, sheet);
-                        else {
+                        } else {
                             this.reportError(kIMPORT_RULE_POSITION);
                             this.addUnknownAtRule(sheet, token.value);
                         }
-                    }
-                    else if (token.isAtRule("@namespace")) {
+                    } else if (token.isAtRule("@namespace")) {
                         // @namespace rules MUST occur before all style rule and
                         // after all @import rules
-                        if (!foundStyleRules)
+                        if (!foundStyleRules) {
                             foundNameSpaceRules = this.parseNamespaceRule(token, sheet);
-                        else {
+                        } else {
                             this.reportError(kNAMESPACE_RULE_POSITION);
                             this.addUnknownAtRule(sheet, token.value);
                         }
-                    }
-                    else if (token.isAtRule("@font-face")) {
-                        if (this.parseFontFaceRule(token, sheet))
+                    } else if (token.isAtRule("@font-face")) {
+                        if (this.parseFontFaceRule(token, sheet)) {
                             foundStyleRules = true;
-                        else
+                        } else {
                             this.addUnknownAtRule(sheet, token.value);
-                    }
-                    else if (token.isAtRule("@page")) {
-                        if (this.parsePageRule(token, sheet))
+                        }
+                    } else if (token.isAtRule("@page")) {
+                        if (this.parsePageRule(token, sheet)) {
                             foundStyleRules = true;
-                        else
+                        } else {
                             this.addUnknownAtRule(sheet, token.value);
-                    }
-                    else if (token.isAtRule("@media")) {
-                        if (this.parseMediaRule(token, sheet))
+                        }
+                    } else if (token.isAtRule("@media")) {
+                        if (this.parseMediaRule(token, sheet)) {
                             foundStyleRules = true;
-                        else
+                        } else {
                             this.addUnknownAtRule(sheet, token.value);
-                    }
-                    else if (token.isAtRule("@charset")) {
+                        }
+                    } else if (token.isAtRule("@charset")) {
                         this.reportError(kCHARSET_RULE_CHARSET_SOF);
                         this.addUnknownAtRule(sheet, token.value);
-                    }
-                    else {
+                    } else {
                         this.reportError(kUNKNOWN_AT_RULE);
                         this.addUnknownAtRule(sheet, token.value);
                     }
@@ -4273,8 +4155,9 @@
                 else // plain style rules
                 {
                     var ruleText = this.parseStyleRule(token, sheet, false);
-                    if (ruleText)
+                    if (ruleText) {
                         foundStyleRules = true;
+                    }
                 }
                 token = this.getToken(false);
             }
@@ -4393,21 +4276,11 @@
         },
 
         isLength:function () {
-            return (this.isPercentage() ||
-                this.isDimensionOfUnit("cm") ||
-                this.isDimensionOfUnit("mm") ||
-                this.isDimensionOfUnit("in") ||
-                this.isDimensionOfUnit("pc") ||
-                this.isDimensionOfUnit("px") ||
-                this.isDimensionOfUnit("em") ||
-                this.isDimensionOfUnit("ex") ||
-                this.isDimensionOfUnit("pt"));
+            return (this.isPercentage() || this.isDimensionOfUnit("cm") || this.isDimensionOfUnit("mm") || this.isDimensionOfUnit("in") || this.isDimensionOfUnit("pc") || this.isDimensionOfUnit("px") || this.isDimensionOfUnit("em") || this.isDimensionOfUnit("ex") || this.isDimensionOfUnit("pt"));
         },
 
         isAngle:function () {
-            return (this.isDimensionOfUnit("deg") ||
-                this.isDimensionOfUnit("rad") ||
-                this.isDimensionOfUnit("grad"));
+            return (this.isDimensionOfUnit("deg") || this.isDimensionOfUnit("rad") || this.isDimensionOfUnit("grad"));
         }
     }
 
@@ -4437,46 +4310,47 @@
         insertRule:function (aRule, aIndex) {
             try {
                 this.cssRules.splice(aIndex, 1, aRule);
-            }
-            catch (e) {
+            } catch (e) {
             }
         },
 
         deleteRule:function (aIndex) {
             try {
                 this.cssRules.splice(aIndex);
-            }
-            catch (e) {
+            } catch (e) {
             }
         },
 
         cssText:function () {
             var rv = "";
-            for (var i = 0; i < this.cssRules.length; i++)
+            for (var i = 0; i < this.cssRules.length; i++) {
                 rv += this.cssRules[i].cssText() + "\n";
+            }
             return rv;
         },
 
         resolveVariables:function (aMedium) {
 
             function ItemFoundInArray(aArray, aItem) {
-                for (var i = 0; i < aArray.length; i++)
-                    if (aItem == aArray[i])
+                for (var i = 0; i < aArray.length; i++) {
+                    if (aItem == aArray[i]) {
                         return true;
+                    }
+                }
                 return false;
             }
 
             for (var i = 0; i < this.cssRules.length; i++) {
                 var rule = this.cssRules[i];
-                if (rule.type == kJscsspSTYLE_RULE || rule.type == kJscsspIMPORT_RULE)
+                if (rule.type == kJscsspSTYLE_RULE || rule.type == kJscsspIMPORT_RULE) {
                     break;
-                else if (rule.type == kJscsspVARIABLES_RULE &&
-                    (!rule.media.length || ItemFoundInArray(rule.media, aMedium))) {
+                } else if (rule.type == kJscsspVARIABLES_RULE && (!rule.media.length || ItemFoundInArray(rule.media, aMedium))) {
 
                     for (var j = 0; j < rule.declarations.length; j++) {
                         var valueText = "";
-                        for (var k = 0; k < rule.declarations[j].values.length; k++)
+                        for (var k = 0; k < rule.declarations[j].values.length; k++) {
                             valueText += (k ? " " : "") + rule.declarations[j].values[k].value;
+                        }
                         this.variables[rule.declarations[j].property] = valueText;
                     }
                 }
@@ -4549,10 +4423,11 @@
         setCssText:function (val) {
             var parser = new CSSParser(val);
             var token = parser.getToken(true, false);
-            if (token.isComment())
+            if (token.isComment()) {
                 this.parsedCssText = token.value;
-            else
+            } else {
                 throw DOMException.SYNTAX_ERR;
+            }
         }
     };
 
@@ -4585,9 +4460,7 @@
     jscsspImportRule.prototype = {
         cssText:function () {
             var mediaString = this.media.join(", ");
-            return "@import " + this.href
-                + ((mediaString && mediaString != "all") ? mediaString + " " : "")
-                + ";";
+            return "@import " + this.href + ((mediaString && mediaString != "all") ? mediaString + " " : "") + ";";
         },
 
         setCssText:function (val) {
@@ -4620,9 +4493,7 @@
 
     jscsspNamespaceRule.prototype = {
         cssText:function () {
-            return "@namespace " + (this.prefix ? this.prefix + " " : "")
-                + this.url
-                + ";";
+            return "@namespace " + (this.prefix ? this.prefix + " " : "") + this.url + ";";
         },
 
         setCssText:function (val) {
@@ -4687,8 +4558,7 @@
                     }
                     return rv;
                 }
-                return this.property + ": " + this.valueText +
-                    (this.priority ? " !important" : "") + ";"
+                return this.property + ": " + this.valueText + (this.priority ? " !important" : "") + ";"
             }
 
             if (prefixes) {
@@ -4697,13 +4567,14 @@
                     var property = prefixes[propertyIndex];
                     rv += (propertyIndex ? gTABS : "") + property + ": ";
                     var separator = (property in this.kCOMMA_SEPARATED) ? ", " : " ";
-                    for (var i = 0; i < this.values.length; i++)
-                        if (this.values[i].cssText() != null)
+                    for (var i = 0; i < this.values.length; i++) {
+                        if (this.values[i].cssText() != null) {
                             rv += (i ? separator : "") + this.values[i].cssText();
-                        else
+                        } else {
                             return null;
-                    rv += (this.priority ? " !important" : "") + ";" +
-                        ((prefixes.length > 1 && propertyIndex != prefixes.length - 1) ? "\n" : "");
+                        }
+                    }
+                    rv += (this.priority ? " !important" : "") + ";" + ((prefixes.length > 1 && propertyIndex != prefixes.length - 1) ? "\n" : "");
                 }
                 return rv;
             }
@@ -4716,17 +4587,18 @@
                 if (v != null) {
                     var paren = v.indexOf("(");
                     var kwd = v;
-                    if (paren != -1)
+                    if (paren != -1) {
                         kwd = v.substr(0, paren);
+                    }
                     if (kwd in kCSS_VENDOR_VALUES) {
                         for (var j in kCSS_VENDOR_VALUES[kwd]) {
                             extras[j] = extras[j] || (kCSS_VENDOR_VALUES[kwd][j] != "");
                         }
                     }
                     rv += (i ? separator : "") + v;
-                }
-                else
+                } else {
                     return null;
+                }
             }
             rv += (this.priority ? " !important" : "") + ";";
 
@@ -4738,8 +4610,9 @@
                         if (v != null) {
                             var paren = v.indexOf("(");
                             var kwd = v;
-                            if (paren != -1)
+                            if (paren != -1) {
                                 kwd = v.substr(0, paren);
+                            }
                             if (kwd in kCSS_VENDOR_VALUES) {
                                 functor = kCSS_VENDOR_VALUES[kwd][j];
                                 if (functor) {
@@ -4751,14 +4624,15 @@
                                 }
                             }
                             str += (i ? separator : "") + v;
-                        }
-                        else
+                        } else {
                             return null;
+                        }
                     }
-                    if (str)
+                    if (str) {
                         rv += str + ";"
-                    else
+                    } else {
                         rv += "\n" + gTABS + "/* Impossible to translate property " + this.property + " for " + j + " */";
+                    }
                 }
             }
             return rv;
@@ -4768,9 +4642,7 @@
             var declarations = [];
             var parser = new CSSParser(val);
             var token = parser.getToken(true, true);
-            if (parser.parseDeclaration(token, declarations, true, true, null)
-                && declarations.length
-                && declarations[0].type == kJscsspSTYLE_DECLARATION) {
+            if (parser.parseDeclaration(token, declarations, true, true, null) && declarations.length && declarations[0].type == kJscsspSTYLE_DECLARATION) {
                 var newDecl = declarations.cssRules[0];
                 this.property = newDecl.property;
                 this.value = newDecl.value;
@@ -4797,8 +4669,9 @@
             var rv = gTABS + "@font-face {\n";
             var preservedGTABS = gTABS;
             gTABS += "  ";
-            for (var i = 0; i < this.descriptors.length; i++)
+            for (var i = 0; i < this.descriptors.length; i++) {
                 rv += gTABS + this.descriptors[i].cssText() + "\n";
+            }
             gTABS = preservedGTABS;
             return rv + gTABS + "}";
         },
@@ -4835,8 +4708,9 @@
             var rv = gTABS + "@media " + this.media.join(", ") + " {\n";
             var preservedGTABS = gTABS;
             gTABS += "  ";
-            for (var i = 0; i < this.cssRules.length; i++)
+            for (var i = 0; i < this.cssRules.length; i++) {
                 rv += gTABS + this.cssRules[i].cssText() + "\n";
+            }
             gTABS = preservedGTABS;
             return rv + gTABS + "}";
         },
@@ -4876,8 +4750,9 @@
             gTABS += "  ";
             for (var i = 0; i < this.declarations.length; i++) {
                 var declText = this.declarations[i].cssText();
-                if (declText)
+                if (declText) {
                     rv += gTABS + this.declarations[i].cssText() + "\n";
+                }
             }
             gTABS = preservedGTABS;
             return rv + gTABS + "}";
@@ -4930,13 +4805,12 @@
 
     jscsspPageRule.prototype = {
         cssText:function () {
-            var rv = gTABS + "@page "
-                + (this.pageSelector ? this.pageSelector + " " : "")
-                + "{\n";
+            var rv = gTABS + "@page " + (this.pageSelector ? this.pageSelector + " " : "") + "{\n";
             var preservedGTABS = gTABS;
             gTABS += "  ";
-            for (var i = 0; i < this.declarations.length; i++)
+            for (var i = 0; i < this.declarations.length; i++) {
                 rv += gTABS + this.declarations[i].cssText() + "\n";
+            }
             gTABS = preservedGTABS;
             return rv + gTABS + "}";
         },
@@ -4971,13 +4845,12 @@
 
     jscsspVariablesRule.prototype = {
         cssText:function () {
-            var rv = gTABS + "@variables " +
-                (this.media.length ? this.media.join(", ") + " " : "") +
-                "{\n";
+            var rv = gTABS + "@variables " + (this.media.length ? this.media.join(", ") + " " : "") + "{\n";
             var preservedGTABS = gTABS;
             gTABS += "  ";
-            for (var i = 0; i < this.declarations.length; i++)
+            for (var i = 0; i < this.declarations.length; i++) {
                 rv += gTABS + this.declarations[i].cssText() + "\n";
+            }
             gTABS = preservedGTABS;
             return rv + gTABS + "}";
         },
@@ -5012,22 +4885,25 @@
 
     jscsspVariable.prototype = {
         cssText:function () {
-            if (this.type == kJscsspVARIABLE_VALUE)
+            if (this.type == kJscsspVARIABLE_VALUE) {
                 return this.resolveVariable(this.name, this.parentRule, this.parentStyleSheet);
-            else
+            } else {
                 return this.value;
+            }
         },
 
         setCssText:function (val) {
-            if (this.type == kJscsspVARIABLE_VALUE)
+            if (this.type == kJscsspVARIABLE_VALUE) {
                 throw DOMException.SYNTAX_ERR;
-            else
+            } else {
                 this.value = val;
+            }
         },
 
         resolveVariable:function (aName, aRule, aSheet) {
-            if (aName.toLowerCase() in aSheet.variables)
+            if (aName.toLowerCase() in aSheet.variables) {
                 return aSheet.variables[aName.toLowerCase()];
+            }
             return null;
         }
     };
@@ -5168,14 +5044,17 @@
     }
 
     function FilterLinearGradientForOutput(aValue, aEngine) {
-        if (aEngine == "generic")
+        if (aEngine == "generic") {
             return aValue.substr(5);
+        }
 
-        if (aEngine == "webkit")
+        if (aEngine == "webkit") {
             return aValue.replace(/\-moz\-/g, "-webkit-")
+        }
 
-        if (aEngine != "webkit20110101")
+        if (aEngine != "webkit20110101") {
             return "";
+        }
 
         var g = CssInspector.parseBackgroundImages(aValue)[0];
 
@@ -5198,17 +5077,20 @@
                 default:
                     break;
             }
-            while (angle < 0)
+            while (angle < 0) {
                 angle += 360;
-            while (angle >= 360)
+            }
+            while (angle >= 360) {
                 angle -= 360;
+            }
         }
         // get startpoint w/o keywords
         var startpoint = [];
         var endpoint = [];
         if (position != "") {
-            if (position == "center")
+            if (position == "center") {
                 position = "center center";
+            }
             startpoint = position.split(" ");
             if (angle == "" && angle != 0) {
                 // no angle, then we just turn the point 180 degrees around center
@@ -5229,13 +5111,13 @@
                         var unit = match[1];
                         if (unit == "%") {
                             endpoint.push((100 - v) + "%");
-                        }
-                        else
+                        } else {
                             cancelled = true;
+                        }
                     }
                         break;
                 }
-                if (!cancelled)
+                if (!cancelled) {
                     switch (startpoint[1]) {
                         case "top":
                             endpoint.push("bottom");
@@ -5253,14 +5135,14 @@
                             var unit = match[1];
                             if (unit == "%") {
                                 endpoint.push((100 - v) + "%");
-                            }
-                            else
+                            } else {
                                 cancelled = true;
+                            }
                         }
                             break;
                     }
-            }
-            else {
+                }
+            } else {
                 switch (angle) {
                     case 0:
                         endpoint.push("right");
@@ -5283,11 +5165,11 @@
                         break;
                 }
             }
-        }
-        else {
+        } else {
             // no position defined, we accept only vertical and horizontal
-            if (angle == "")
+            if (angle == "") {
                 angle = 270;
+            }
             switch (angle) {
                 case 0:
                     startpoint = ["left", "center"];
@@ -5311,14 +5193,17 @@
             }
         }
 
-        if (cancelled)
+        if (cancelled) {
             return "";
+        }
 
         str += startpoint.join(" ") + ", " + endpoint.join(" ");
-        if (!g.value.stops[0].position)
+        if (!g.value.stops[0].position) {
             g.value.stops[0].position = "0%";
-        if (!g.value.stops[g.value.stops.length - 1].position)
+        }
+        if (!g.value.stops[g.value.stops.length - 1].position) {
             g.value.stops[g.value.stops.length - 1].position = "100%";
+        }
         var current = 0;
         for (var i = 0; i < g.value.stops.length && !cancelled; i++) {
             var s = g.value.stops[i];
@@ -5327,11 +5212,11 @@
                     cancelled = true;
                     break;
                 }
-            }
-            else {
+            } else {
                 var j = i + 1;
-                while (j < g.value.stops.length && !g.value.stops[j].position)
+                while (j < g.value.stops.length && !g.value.stops[j].position) {
                     j++;
+                }
                 var inc = parseFloat(g.value.stops[j].position) - current;
                 for (var k = i; k < j; k++) {
                     g.value.stops[k].position = (current + inc * (k - i + 1) / (j - i + 1)) + "%";
@@ -5341,40 +5226,42 @@
             str += ", color-stop(" + (parseFloat(current) / 100) + ", " + s.color + ")";
         }
 
-        if (cancelled)
+        if (cancelled) {
             return "";
+        }
         return str + ")";
     }
 
     function FilterRadialGradientForOutput(aValue, aEngine) {
-        if (aEngine == "generic")
+        if (aEngine == "generic") {
             return aValue.substr(5);
+        }
 
-        else if (aEngine == "webkit")
+        else if (aEngine == "webkit") {
             return aValue.replace(/\-moz\-/g, "-webkit-")
+        }
 
-        else if (aEngine != "webkit20110101")
+        else if (aEngine != "webkit20110101") {
             return "";
+        }
 
         var g = CssInspector.parseBackgroundImages(aValue)[0];
 
         var shape = ("shape" in g.value) ? g.value.shape : "";
         var size = ("size"  in g.value) ? g.value.size : "";
-        if (shape != "circle"
-            || (size != "farthest-corner" && size != "cover"))
+        if (shape != "circle" || (size != "farthest-corner" && size != "cover")) {
             return "";
+        }
 
-        if (g.value.stops.length < 2
-            || !("position" in g.value.stops[0])
-            || !g.value.stops[g.value.stops.length - 1].position
-            || !("position" in g.value.stops[0])
-            || !g.value.stops[g.value.stops.length - 1].position)
+        if (g.value.stops.length < 2 || !("position" in g.value.stops[0]) || !g.value.stops[g.value.stops.length - 1].position || !("position" in g.value.stops[0]) || !g.value.stops[g.value.stops.length - 1].position) {
             return "";
+        }
 
         for (var i = 0; i < g.value.stops.length; i++) {
             var s = g.value.stops[i];
-            if (("position" in s) && s.position && s.position.indexOf("px") == -1)
+            if (("position" in s) && s.position && s.position.indexOf("px") == -1) {
                 return "";
+            }
         }
 
         var str = "-webkit-gradient(radial, ";
@@ -5388,16 +5275,16 @@
             var s = g.value.stops[i];
             if (!("position" in s) || !s.position) {
                 var j = i + 1;
-                while (j < g.value.stops.length && !g.value.stops[j].position)
+                while (j < g.value.stops.length && !g.value.stops[j].position) {
                     j++;
+                }
                 var inc = parseFloat(g.value.stops[j].position) - current;
                 for (var k = i; k < j; k++) {
                     g.value.stops[k].position = (current + inc * (k - i + 1) / (j - i + 1)) + "px";
                 }
             }
             current = parseFloat(s.position);
-            var c = (current - parseFloat(g.value.stops[0].position)) /
-                (parseFloat(g.value.stops[g.value.stops.length - 1].position) - parseFloat(g.value.stops[0].position));
+            var c = (current - parseFloat(g.value.stops[0].position)) / (parseFloat(g.value.stops[g.value.stops.length - 1].position) - parseFloat(g.value.stops[0].position));
             str += ", color-stop(" + c + ", " + s.color + ")";
         }
         str += ")"
@@ -5405,16 +5292,17 @@
     }
 
     function FilterRepeatingGradientForOutput(aValue, aEngine) {
-        if (aEngine == "generic")
+        if (aEngine == "generic") {
             return aValue.substr(5);
+        }
 
-        else if (aEngine == "webkit")
+        else if (aEngine == "webkit") {
             return aValue.replace(/\-moz\-/g, "-webkit-")
+        }
 
         return "";
     }
 
-    //----------  end jscssp code ----------
 
     /**
      * CSS Style declaration
@@ -5435,111 +5323,130 @@
     };
 
     var callbacks = {
-        parserStar: undefined,
-        parserStop: undefined,
-        cssRuleFound: undefined,
-        propertyFound: undefined,
+        parserStar:undefined,
+        parserStop:undefined,
+        cssRuleFound:undefined,
+        propertyFound:undefined,
         error:undefined
-    },
-        cssParser = function() {
-            return new cssParser.prototype.init();
+    }, cssParser, logger, CssParserInstance;
+
+    logger = wef.logger("cssParser").filter("none");
+
+    CssParserInstance = function () {
+        return this;
+    };
+
+    CssParserInstance.prototype = {
+        version:"0.0.1",
+
+        backend:undefined,
+
+        whenStart:function (callback) {
+            if (wef.isFunction(callback)) {
+                callbacks.parserStar = callback;
+                logger.debug("when parserStar => ", callback);
+            }
+            return this;
         },
-        logger = wef.logger("cssParser");
 
-    cssParser.prototype.constructor = cssParser;
-    var CssParserInstance = function() {
-        return this;
-    };
-
-    CssParserInstance.prototype.version = "0.0.1";
-
-    CssParserInstance.prototype.whenStart = function(callback) {
-        if (wef.isFunction(callback)) {
-            callbacks.parserStar = callback;
-            logger.debug("when parserStar -> ", callback);
-        }
-        return this;
-    };
-
-    CssParserInstance.prototype.whenStop = function(callback) {
-        if (wef.isFunction(callback)) {
-            callbacks.parserStop = callback;
-            logger.debug("when parserStop -> ", callback);
-        }
-        return this;
-    };
-
-    CssParserInstance.prototype.whenCssRule = function(callback) {
-        if (wef.isFunction(callback)) {
-            callbacks.cssRuleFound = callback;
-            logger.debug("when CssRuleFound -> ", callback);
-        }
-        return this;
-    };
-
-    CssParserInstance.prototype.whenProperty = function(callback) {
-        if (wef.isFunction(callback)) {
-            callbacks.propertyFound = callback;
-            logger.debug("when propertyFound -> ", callback);
-        }
-        return this;
-    };
-
-    CssParserInstance.prototype.whenError = function(callback) {
-        if (wef.isFunction(callback)) {
-            callbacks.error = callback;
-            logger.debug("when error -> ", callback);
-        }
-        return this;
-    };
-
-    CssParserInstance.prototype.parse = function(data) {
-        try {
-            if (!data || !wef.isString(data) || data === "") {
-                throw new Error("InvalidArgumentExcetion - data must be a non empty string");
+        whenStop:function (callback) {
+            if (wef.isFunction(callback)) {
+                callbacks.parserStop = callback;
+                logger.debug("when parserStop => ", callback);
             }
-            var sheet = new CSSParser().parse(data, false, false);
-            if (callbacks.parserStar) {
-                callbacks.parserStar.call();
+            return this;
+        },
+
+        whenCssRule:function (callback) {
+            if (wef.isFunction(callback)) {
+                callbacks.cssRuleFound = callback;
+                logger.debug("when CssRuleFound => ", callback);
             }
-            //start
-            sheet.cssRules.forEach(function (cssRule) {
-                //cssFound.cssRule
-                //wef.log.debug(cssRuleEvent);
-                if (callbacks.cssRuleFound) {
-                    callbacks.cssRuleFound.call(cssRule);
+            return this;
+        },
+
+        whenProperty:function (callback) {
+            if (wef.isFunction(callback)) {
+                callbacks.propertyFound = callback;
+                logger.debug("when propertyFound => ", callback);
+            }
+            return this;
+        },
+
+        whenError:function (callback) {
+            if (wef.isFunction(callback)) {
+                callbacks.error = callback;
+                logger.debug("when error -> ", callback);
+            }
+            return this;
+        },
+
+        parse:function (data) {
+            try {
+                if (!data || !wef.isString(data) || data === "") {
+                    var message = "InvalidArgumentException - data must be a non empty string";
+                    logger.error(message);
+                    throw new Error(message);
                 }
-                //ErrorRule
-                if (cssRule.type === 0) {
-                    throw new Error("ParserException - Error in line " + cssRule.currentLine + ": " + cssRule.parsedCssText);
+                if (callbacks.parserStar) {
+                    logger.info("parserStart callback");
+                    callbacks.parserStar.call(new Date().toString());
                 }
-                cssRule.declarations.forEach(function (declaration) {
-                    //propertyFound.cssRule.selectorText(),
-                    //propoertyFound.declaration:new StyleDeclaration(declaration.property, declaration.valueText)
-                    //wef.log.debug(propertyEvent);
-                    if (callbacks.propertyFound) {
-                        var property = {selectorText: cssRule.selectorText(),
-                            declaration: new StyleDeclaration(declaration.property, declaration.valueText)};
-                        callbacks.propertyFound.call(property);
+                var sheet = new CSSParser().parse(data, false, false), property;
+                //start
+                sheet.cssRules.forEach(function (cssRule) {
+                    logger.debug("cssRule:", cssRule);
+                    if (callbacks.cssRuleFound) {
+                        logger.info("cssRuleFound callback");
+                        callbacks.cssRuleFound.call(cssRule);
                     }
+                    //ErrorRule
+                    if (cssRule.type === 0) {
+                        var message = "ParserException - Error in line " + cssRule.currentLine + ": " + cssRule.parsedCssText;
+                        logger.error(message);
+                        throw new Error(message);
+                    }
+                    cssRule.declarations.forEach(function (declaration) {
+                        property = {selectorText:cssRule.selectorText(),
+                            declaration:new StyleDeclaration(declaration.property, declaration.valueText)};
+                        logger.debug("property:", property);
+                        if (callbacks.propertyFound) {
+                            logger.info("propertyFound callback");
+                            callbacks.propertyFound.call(property);
+                        }
+                    });
                 });
-            });
-            //done
-            if (callbacks.parserStop) {
-                callbacks.parserStop.call();
+                //done
+                if (callbacks.parserStop) {
+                    logger.info("parserStop callback");
+                    callbacks.parserStop.call(new Date().toString());
+                }
+            } catch (e) {
+                if (callbacks.error) {
+                    logger.error("error callback:", e);
+                    callbacks.error.call(e.message);
+                    return this;
+                } else {
+                    logger.error("error -> wef.error:", e);
+                    wef.error(e.message);
+                    return null;
+                }
             }
-        } catch(e) {
-            if (callbacks.error) {
-                callbacks.error.call(e.message);
-                return this;
-            } else {
-                wef.error(e.message);
-                return null;
-            }
+            return this;
         }
-        return this;
-    }
-    cssParser.prototype.init = CssParserInstance;
+    };
+
+    cssParser = function () {
+        return new cssParser.prototype.init();
+    };
+
+    cssParser.prototype = {
+        constructor:cssParser,
+        init:CssParserInstance
+    };
 
     wef.cssParser = cssParser;
-})();
+
+    logger.info("cssParser plugged to wef.cssParser")
+
+})(window.wef);
