@@ -4,7 +4,7 @@ About Wef
 Wef is a Web Extensions Framework
 
 *   License: [MIT License](https://github.com/diesire/wef/blob/master/LICENSE.txt)
-*   Tests: [test/](https://github.com/diesire/wef/tree/master/test)
+*   Tests: [test](https://github.com/diesire/wef/tree/master/test)
 
 Features
 --------
