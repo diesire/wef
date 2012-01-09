@@ -22,6 +22,9 @@ test("constructor", function () {
 
 test("public properties", function () {
     equal(typeof wef.logger().version, "string", "wef.logger().version");
+    equal(typeof wef.logger.version, "string", "wef.logger.version");
+    equal(typeof wef.logger.LOGLEVEL.all, "number", "wef.logger.LOGLEVEL.all");
+    equal(typeof wef.logger().LOGLEVEL.all, "number", "wef.logger().LOGLEVEL.all");
 });
 
 test("pubic methods", function () {
@@ -37,6 +40,7 @@ test("pubic methods", function () {
     equal(typeof wef.logger().filter("all"), typeof wef.logger(), "filter()");
 
     equal(typeof wef.logger.filter("all"), typeof wef.logger, "logger.filter()");
+    equal(typeof wef.logger.filter({logLevel:wef.logger.LOGLEVEL.all,pattern: ".*"}), typeof wef.logger, "logger.filter()");
 });
 
 test("chaining", function () {
