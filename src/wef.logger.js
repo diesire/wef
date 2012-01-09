@@ -15,98 +15,107 @@
         warn:4,
         error:5,
         none:100
-    };
+    }, textFormatter, registered = {}, lastLogger, failSafeIndentation = false, logger, filteredLogs = 0;
 
-    var textFormatter = function() {
+    textFormatter = function () {
         return this;
     };
 
-    textFormatter.prototype.format = function (messages, indentationLevel, type) {
-        var tmp = [],
-            levelMarks = "                                                                                            ",
-            levelText, typeText;
-        tmp = Array.prototype.slice.call(messages, tmp);
-        if (failSafeIndentation && indentationLevel) {
-            levelText = levelMarks.slice(0, indentationLevel);
-            tmp.unshift(levelText);
-        }
-        if (type) {
-            typeText = "[" + type + "]";
-            tmp.unshift(levelText);
-        }
-        return tmp;
-    };
-
-    var registered = {},
-        lastLogger,
-        failSafeIndentation = false,
-        logger = function(logName) {
-            if (!logName || logName == "") {
-                logName = "default";
+    textFormatter.prototype = {
+        format:function (messages, indentationLevel, type) {
+            var tmp = [], levelMarks = "                                                                                            ", levelText, typeText;
+            tmp = Array.prototype.slice.call(messages, tmp);
+            if (failSafeIndentation && indentationLevel) {
+                levelText = levelMarks.slice(0, indentationLevel);
+                tmp.unshift(levelText);
             }
-            var name = lastLogger = logName || lastLogger;
-            if (registered[lastLogger]) {
-                return registered[lastLogger].logger;
-            } else {
-                var tmpLogger = new logger.prototype.init(lastLogger);
-                registered[lastLogger] = {logLevel: LOGLEVEL.all, indentationLevel: 0, logger: tmpLogger};
-                return tmpLogger;
+            if (type) {
+                typeText = "[" + type + "]";
+                tmp.unshift(typeText);
             }
-        };
-
-    logger.prototype.constructor = logger;
-    logger.prototype.version = "0.0.1";
-    logger.prototype.formatter = new textFormatter();
-    logger.prototype.init = function (logName) {
-        this.logName = logName;
-        return this;
-    };
-
-    logger.prototype._filteredLogs = function() {
-        return filteredLogs;
-    };
-    logger.prototype._getIndentLevel = function(logName) {
-        return registered[logName].indentationLevel;
-    };
-
-    /**
-     * Filter current loggers by name and priority level.
-     * Only log entries from matched loggers and priority > filter level are allowed. Filtered logs are lost.
-     *
-     * @param {Object|string} options Filter options. There are two shorcuts :
-     * string "all" activate all loggers (logLevel: -1, pattern: ".*")
-     * string "none" deactivate all loggers (logLevel: 100, pattern: ".*")
-     * @param {number} options.logLevel Priority level
-     * @param {string} options.pattern Pattern that matches against current registered loggers. Pattern must be regExp
-     * compatible.
-     * */
-    logger.filter = logger.prototype.filter = function (options) {
-        if (!options) return this;
-
-        if (options == "none" || options == "off") {
-            options = {logLevel: LOGLEVEL.none, pattern: ".*"};
+            return tmp;
         }
+    };
 
-        if (options == "all" || options == "on") {
-            options = {logLevel: LOGLEVEL.all, pattern: ".*"};
+    logger = function (logName) {
+        var tmpLogger;
+        if (!logName || logName === "") {
+            logName = "default";
         }
+        lastLogger = logName;
+        if (registered[lastLogger]) {
+            return registered[lastLogger].logger;
+        } else {
+            tmpLogger = new logger.prototype.init(lastLogger);
+            registered[lastLogger] = {
+                logLevel:LOGLEVEL.all,
+                indentationLevel:0,
+                logger:tmpLogger
+            };
+            return tmpLogger;
+        }
+    };
 
-        if (!options.logLevel || typeof options.logLevel != "number" || !options.pattern || typeof options.pattern != "string") {
-            //do nothing
+    logger.prototype = {
+        constructor:logger,
+        version:"0.0.1",
+        formatter:new textFormatter(),
+        init:function (logName) {
+            this.logName = logName;
+            return this;
+        },
+        _filteredLogs:function () {
+            return filteredLogs;
+        },
+        _getIndentLevel:function (logName) {
+            return registered[logName].indentationLevel;
+        },
+        /**
+         * Filter current loggers by name and priority level.
+         * Only log entries from matched loggers and priority > filter level are allowed. Filtered logs are lost.
+         *
+         * @param {Object|string} options Filter options. There are two shortcuts :
+         * string "all" activate all loggers (logLevel: -1, pattern: ".*")
+         * string "none" deactivate all loggers (logLevel: 100, pattern: ".*")
+         * @param {number} options.logLevel Priority level
+         * @param {string} options.pattern Pattern that matches against current registered loggers. Pattern must be regExp
+         * compatible.
+         * */
+        filter:function (options) {
+            var name, regExp, logLevel;
+            if (!options) {
+                return this;
+            }
+
+            if (options == "none" || options == "off") {
+                options = {logLevel:LOGLEVEL.none, pattern:".*"};
+            }
+
+            if (options == "all" || options == "on") {
+                options = {logLevel:LOGLEVEL.all, pattern:".*"};
+            }
+
+            if (!options.logLevel || typeof options.logLevel != "number" || !options.pattern || typeof options.pattern != "string") {
+                //do nothing
+                return this;
+            }
+            regExp = new RegExp(options.pattern);
+            logLevel = options.logLevel;
+
+            for (name in registered) {
+                if (regExp.test(name)) {
+                    registered[name].logLevel = logLevel;
+                } else {
+                    registered[name].logLevel = LOGLEVEL.none;
+                }
+            }
+            filteredLogs = 0;
             return this;
         }
-        var regExp = new RegExp(options.pattern), logLevel = options.logLevel;
-
-        for (var name in registered) {
-            if (regExp.test(name)) {
-                registered[name].logLevel = logLevel;
-            } else {
-                registered[name].logLevel = LOGLEVEL.none;
-            }
-        }
-        filteredLogs = 0;
-        return this;
     };
+
+    logger.filter = logger.prototype.filter;
+
 
     logger.prototype.backend = window.console || {};
     logger.prototype.backend.failSafe = function () {
@@ -211,4 +220,5 @@
     };
 
     wef.logger = logger;
+
 })(window.wef);
