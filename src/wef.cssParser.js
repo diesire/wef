@@ -5024,119 +5024,120 @@
         error:undefined
     }, cssParser, logger, CssParserInstance;
 
-    cssParser = function () {
-        return new cssParser.prototype.init();
-    };
-
     logger = wef.logger("cssParser").filter("none");
-
-    cssParser.prototype.constructor = cssParser;
 
     CssParserInstance = function () {
         return this;
     };
 
-    CssParserInstance.prototype.version = "0.0.1";
+    CssParserInstance.prototype = {
+        version:"0.0.1",
 
-    CssParserInstance.prototype.backend = null;
+        backend:undefined,
 
-    CssParserInstance.prototype.whenStart = function (callback) {
-        if (wef.isFunction(callback)) {
-            callbacks.parserStar = callback;
-            logger.debug("when parserStar => ", callback);
-        }
-        return this;
-    };
-
-    CssParserInstance.prototype.backend = undefined;
-
-    CssParserInstance.prototype.whenStop = function (callback) {
-        if (wef.isFunction(callback)) {
-            callbacks.parserStop = callback;
-            logger.debug("when parserStop => ", callback);
-        }
-        return this;
-    };
-
-    CssParserInstance.prototype.whenCssRule = function (callback) {
-        if (wef.isFunction(callback)) {
-            callbacks.cssRuleFound = callback;
-            logger.debug("when CssRuleFound => ", callback);
-        }
-        return this;
-    };
-
-    CssParserInstance.prototype.whenProperty = function (callback) {
-        if (wef.isFunction(callback)) {
-            callbacks.propertyFound = callback;
-            logger.debug("when propertyFound => ", callback);
-        }
-        return this;
-    };
-
-    CssParserInstance.prototype.whenError = function (callback) {
-        if (wef.isFunction(callback)) {
-            callbacks.error = callback;
-            logger.debug("when error -> ", callback);
-        }
-        return this;
-    };
-
-    CssParserInstance.prototype.parse = function (data) {
-        try {
-            if (!data || !wef.isString(data) || data === "") {
-                var message = "InvalidArgumentExcetion - data must be a non empty string";
-                logger.error(message);
-                throw new Error(message);
+        whenStart:function (callback) {
+            if (wef.isFunction(callback)) {
+                callbacks.parserStar = callback;
+                logger.debug("when parserStar => ", callback);
             }
-            if (callbacks.parserStar) {
-                logger.info("parserStart callback");
-                callbacks.parserStar.call();
+            return this;
+        },
+
+        whenStop:function (callback) {
+            if (wef.isFunction(callback)) {
+                callbacks.parserStop = callback;
+                logger.debug("when parserStop => ", callback);
             }
-            var sheet = new CSSParser().parse(data, false, false), property;
-            //start
-            sheet.cssRules.forEach(function (cssRule) {
-                logger.debug("cssRule:", cssRule);
-                if (callbacks.cssRuleFound) {
-                    logger.info("cssRuleFound callback");
-                    callbacks.cssRuleFound.call(cssRule);
-                }
-                //ErrorRule
-                if (cssRule.type === 0) {
-                    var message = "ParserException - Error in line " + cssRule.currentLine + ": " + cssRule.parsedCssText;
+            return this;
+        },
+
+        whenCssRule:function (callback) {
+            if (wef.isFunction(callback)) {
+                callbacks.cssRuleFound = callback;
+                logger.debug("when CssRuleFound => ", callback);
+            }
+            return this;
+        },
+
+        whenProperty:function (callback) {
+            if (wef.isFunction(callback)) {
+                callbacks.propertyFound = callback;
+                logger.debug("when propertyFound => ", callback);
+            }
+            return this;
+        },
+
+        whenError:function (callback) {
+            if (wef.isFunction(callback)) {
+                callbacks.error = callback;
+                logger.debug("when error -> ", callback);
+            }
+            return this;
+        },
+
+        parse:function (data) {
+            try {
+                if (!data || !wef.isString(data) || data === "") {
+                    var message = "InvalidArgumentExcetion - data must be a non empty string";
                     logger.error(message);
                     throw new Error(message);
                 }
-                cssRule.declarations.forEach(function (declaration) {
-                    property = {selectorText:cssRule.selectorText(),
-                        declaration:new StyleDeclaration(declaration.property, declaration.valueText)};
-                    logger.debug("property:", property);
-                    if (callbacks.propertyFound) {
-                        logger.info("propertyFound callback");
-                        callbacks.propertyFound.call(property);
+                if (callbacks.parserStar) {
+                    logger.info("parserStart callback");
+                    callbacks.parserStar.call();
+                }
+                var sheet = new CSSParser().parse(data, false, false), property;
+                //start
+                sheet.cssRules.forEach(function (cssRule) {
+                    logger.debug("cssRule:", cssRule);
+                    if (callbacks.cssRuleFound) {
+                        logger.info("cssRuleFound callback");
+                        callbacks.cssRuleFound.call(cssRule);
                     }
+                    //ErrorRule
+                    if (cssRule.type === 0) {
+                        var message = "ParserException - Error in line " + cssRule.currentLine + ": " + cssRule.parsedCssText;
+                        logger.error(message);
+                        throw new Error(message);
+                    }
+                    cssRule.declarations.forEach(function (declaration) {
+                        property = {selectorText:cssRule.selectorText(),
+                            declaration:new StyleDeclaration(declaration.property, declaration.valueText)};
+                        logger.debug("property:", property);
+                        if (callbacks.propertyFound) {
+                            logger.info("propertyFound callback");
+                            callbacks.propertyFound.call(property);
+                        }
+                    });
                 });
-            });
-            //done
-            if (callbacks.parserStop) {
-                logger.info("parserStop callback");
-                callbacks.parserStop.call();
+                //done
+                if (callbacks.parserStop) {
+                    logger.info("parserStop callback");
+                    callbacks.parserStop.call();
+                }
+            } catch (e) {
+                if (callbacks.error) {
+                    logger.error("error callback:", e);
+                    callbacks.error.call(e.message);
+                    return this;
+                } else {
+                    logger.error("error -> wef.error:", e);
+                    wef.error(e.message);
+                    return null;
+                }
             }
-        } catch (e) {
-            if (callbacks.error) {
-                logger.error("error callback:", e);
-                callbacks.error.call(e.message);
-                return this;
-            } else {
-                logger.error("error -> wef.error:", e);
-                wef.error(e.message);
-                return null;
-            }
+            return this;
         }
-        return this;
     };
 
-    cssParser.prototype.init = CssParserInstance;
+    cssParser = function () {
+        return new cssParser.prototype.init();
+    };
+
+    cssParser.prototype = {
+        constructor:cssParser,
+        init:CssParserInstance
+    };
 
     wef.cssParser = cssParser;
 
