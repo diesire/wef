@@ -52,6 +52,19 @@ test("parse exceptions", function () {
         }).parse("asd").parse("body{}"), null, "error callback allows chaining");
 });
 
+asyncTest("events", function() {
+    var a = 0;
+    wef.cssParser().whenStart(function() {
+        a = 1;
+    }).parse("body{}");
+    equal(a, 1);
+    setTimeout(function() {
+        equal(a, 1);
+        start();
+        equal(a, 1);
+    }, 1000);
+});
+
 //test("events", function () {
 //    var text = "body {display: \"a\"}", events = [];
 //
