@@ -1,5 +1,3 @@
-//requires: wef
-
 /*!
  * Wef logger
  * Copyright (c) 2011 Pablo Escalada
