@@ -4,6 +4,7 @@
  * MIT Licensed
  */
 module("cssParser");
+
 test("namespace", function () {
     notEqual(wef.cssParser, undefined, "is wef.cssParser namespace defined?");
     equal(typeof wef.cssParser, "function", "is wef.cssParser a function?");
