@@ -22,6 +22,10 @@
 
     wef.fn = wef.prototype;
 
+    wef.prototype.init = function() {
+        return this;
+    };
+
     wef.prototype.init.prototype = wef.prototype;
 
     wef.fn.extend = function (receiver, giver) {
