@@ -5024,7 +5024,7 @@
         error:undefined
     }, cssParser, logger, CssParserInstance;
 
-    logger = wef.logger("cssParser").filter("none");
+    logger = wef.logger("wef.cssParser");
 
     CssParserInstance = function () {
         return this;
