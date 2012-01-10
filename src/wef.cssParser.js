@@ -5085,7 +5085,7 @@
                 }
                 if (callbacks.parserStar) {
                     logger.info("parserStart callback");
-                    callbacks.parserStar.call(new Date().toString());
+                    callbacks.parserStar.call(context, new Date().toString());
                 }
                 sheet = new CSSParser().parse(data, false, false);
                 //start
@@ -5093,7 +5093,7 @@
                     logger.debug("cssRule:", cssRule);
                     if (callbacks.cssRuleFound) {
                         logger.info("cssRuleFound callback");
-                        callbacks.cssRuleFound.call(cssRule);
+                        callbacks.cssRuleFound.call(context, cssRule);
                     }
                     //ErrorRule
                     if (cssRule.type === 0) {
@@ -5107,19 +5107,19 @@
                         logger.debug("property:", property);
                         if (callbacks.propertyFound) {
                             logger.info("propertyFound callback");
-                            callbacks.propertyFound.call(property);
+                            callbacks.propertyFound.call(context, property);
                         }
                     });
                 });
                 //done
                 if (callbacks.parserStop) {
                     logger.info("parserStop callback");
-                    callbacks.parserStop.call(new Date().toString());
+                    callbacks.parserStop.call(context, new Date().toString());
                 }
             } catch (e) {
                 if (callbacks.error) {
                     logger.error("error callback:", e);
-                    callbacks.error.call(e.message);
+                    callbacks.error.call(context, e.message);
                     return this;
                 } else {
                     logger.error("error -> wef.error:", e);
