@@ -5076,6 +5076,7 @@
         },
 
         parse:function (data) {
+            var sheet, property, context = this;
             try {
                 if (!data || !wef.isString(data) || data === "") {
                     var message = "InvalidArgumentException - data must be a non empty string";
@@ -5086,7 +5087,7 @@
                     logger.info("parserStart callback");
                     callbacks.parserStar.call(new Date().toString());
                 }
-                var sheet = new CSSParser().parse(data, false, false), property;
+                sheet = new CSSParser().parse(data, false, false);
                 //start
                 sheet.cssRules.forEach(function (cssRule) {
                     logger.debug("cssRule:", cssRule);
