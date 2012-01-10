@@ -5102,8 +5102,10 @@
                         throw new Error(message);
                     }
                     cssRule.declarations.forEach(function (declaration) {
-                        property = {selectorText:cssRule.selectorText(),
-                            declaration:new StyleDeclaration(declaration.property, declaration.valueText)};
+                        property = {
+                            selectorText:cssRule.selectorText(),
+                            declaration:new StyleDeclaration(declaration.property, declaration.valueText)
+                        };
                         logger.debug("property:", property);
                         if (callbacks.propertyFound) {
                             logger.info("propertyFound callback");
