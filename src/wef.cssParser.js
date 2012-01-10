@@ -5085,7 +5085,7 @@
                 }
                 if (callbacks.parserStar) {
                     logger.info("parserStart callback");
-                    callbacks.parserStar.call(context, new Date().toString());
+                    callbacks.parserStar.call(context, {time: new Date().getTime()});
                 }
                 sheet = new CSSParser().parse(data, false, false);
                 //start
@@ -5116,7 +5116,7 @@
                 //done
                 if (callbacks.parserStop) {
                     logger.info("parserStop callback");
-                    callbacks.parserStop.call(context, new Date().toString());
+                    callbacks.parserStop.call(context, {time: new Date().getTime()});
                 }
             } catch (e) {
                 if (callbacks.error) {
