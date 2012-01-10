@@ -5037,40 +5037,40 @@
 
         whenStart:function (callback) {
             if (wef.isFunction(callback)) {
+                logger.debug("set parserStart callback");
                 callbacks.parserStar = callback;
-                logger.debug("when parserStar => ", callback);
             }
             return this;
         },
 
         whenStop:function (callback) {
             if (wef.isFunction(callback)) {
+                logger.debug("set parserStop callback");
                 callbacks.parserStop = callback;
-                logger.debug("when parserStop => ", callback);
             }
             return this;
         },
 
         whenCssRule:function (callback) {
             if (wef.isFunction(callback)) {
+                logger.debug("set CssRuleFound callback");
                 callbacks.cssRuleFound = callback;
-                logger.debug("when CssRuleFound => ", callback);
             }
             return this;
         },
 
         whenProperty:function (callback) {
             if (wef.isFunction(callback)) {
+                logger.debug("set propertyFound callback");
                 callbacks.propertyFound = callback;
-                logger.debug("when propertyFound => ", callback);
             }
             return this;
         },
 
         whenError:function (callback) {
             if (wef.isFunction(callback)) {
+                logger.debug("set error callback");
                 callbacks.error = callback;
-                logger.debug("when error -> ", callback);
             }
             return this;
         },
@@ -5084,7 +5084,7 @@
                     throw new Error(message);
                 }
                 if (callbacks.parserStar) {
-                    logger.info("parserStart callback");
+                    logger.debug("call parserStart callback");
                     callbacks.parserStar.call(context, {time: new Date().getTime()});
                 }
                 sheet = new CSSParser().parse(data, false, false);
@@ -5092,7 +5092,7 @@
                 sheet.cssRules.forEach(function (cssRule) {
                     logger.debug("cssRule:", cssRule);
                     if (callbacks.cssRuleFound) {
-                        logger.info("cssRuleFound callback");
+                        logger.debug("call cssRuleFound callback");
                         callbacks.cssRuleFound.call(context, cssRule);
                     }
                     //ErrorRule
@@ -5108,23 +5108,23 @@
                         };
                         logger.debug("property:", property);
                         if (callbacks.propertyFound) {
-                            logger.info("propertyFound callback");
+                            logger.debug("call propertyFound callback");
                             callbacks.propertyFound.call(context, property);
                         }
                     });
                 });
                 //done
                 if (callbacks.parserStop) {
-                    logger.info("parserStop callback");
+                    logger.debug("call parserStop callback");
                     callbacks.parserStop.call(context, {time: new Date().getTime()});
                 }
             } catch (e) {
                 if (callbacks.error) {
-                    logger.error("error callback:", e);
+                    logger.error("call error callback:", e);
                     callbacks.error.call(context, e.message);
                     return this;
                 } else {
-                    logger.error("error -> wef.error:", e);
+                    logger.error("unhandled error call wef.error:", e);
                     wef.error(e.message);
                     return null;
                 }
