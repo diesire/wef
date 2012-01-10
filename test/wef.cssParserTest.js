@@ -54,23 +54,28 @@ test("parse exceptions", function () {
 
 asyncTest("events", function () {
     var text = "body {display: \"a\"}", events = [];
-
-    wef.cssParser().whenStart(function () {
+    expect(10);
+    wef.cssParser().whenStart(function (o) {
+        equal(typeof o.time, "number", "start time in milliseconds");
         events.push("start");
     });
-    wef.cssParser().whenProperty(function () {
+    wef.cssParser().whenProperty(function (property) {
+        notEqual(property.selectorText, undefined, "is property.selectorText valid?");
+        notEqual(property.declaration.property, undefined, "is declaration.property valid?")
+        notEqual(property.declaration.valueText, undefined, "is declaration.valueText valid?")
         events.push("prop");
     });
-    wef.cssParser().whenCssRule(function () {
+    wef.cssParser().whenCssRule(function (cssRule) {
+        notEqual(cssRule.currentLine, undefined, "is cssRule data valid?");
         events.push("css");
     });
-    wef.cssParser().whenStop(function () {
+    wef.cssParser().whenStop(function (o) {
+        equal(typeof o.time, "number", "stop time in milliseconds");
         events.push("stop");
     });
     wef.cssParser().parse(text);
 
     setTimeout(function () {
-        expect(4);
         equal("start", events.shift());
         equal("css", events.shift());
         equal("prop", events.shift());
