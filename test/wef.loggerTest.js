@@ -11,7 +11,7 @@ test("namespace", function () {
 });
 
 test("wef.logger.fn", function () {
-    notEqual(typeof wef.logger.fn, undefined, "is wef.logger.fn defined ?");
+    notEqual(wef.logger.fn, undefined, "is wef.logger.fn defined ?");
 });
 
 test("constructor", function () {
