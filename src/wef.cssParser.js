@@ -2924,7 +2924,7 @@
                         }
 
                         else if (!fFamily && // *MUST* be last to be tested here
-                            (token.isString() || token.isIdent())) {
+                                 (token.isString() || token.isIdent())) {
                             var lastWasComma = false;
                             while (true) {
                                 if (!token.isNotNull()) {
@@ -5026,13 +5026,23 @@
 
     logger = wef.logger("wef.cssParser");
 
-    CssParserInstance = function () {
-        return this;
+    cssParser = function () {
+        return new cssParser.prototype.init();
     };
 
-    CssParserInstance.prototype = {
-        version:"0.1.0",
+    cssParser.prototype = {
+        version:"0.2.0",
+        constructor:cssParser,
+        init:function () {
+            return this;
+        }
+    };
 
+    cssParser.fn = cssParser.prototype;
+
+    cssParser.prototype.init.prototype = cssParser.prototype;
+
+    wef.extend(cssParser.prototype.init.prototype, {
         backend:undefined,
 
         whenStart:function (callback) {
@@ -5085,7 +5095,7 @@
                 }
                 if (callbacks.parserStar) {
                     logger.debug("call parserStart callback");
-                    callbacks.parserStar.call(context, {time: new Date().getTime()});
+                    callbacks.parserStar.call(context, {time:new Date().getTime()});
                 }
                 sheet = new CSSParser().parse(data, false, false);
                 //start
@@ -5116,7 +5126,7 @@
                 //done
                 if (callbacks.parserStop) {
                     logger.debug("call parserStop callback");
-                    callbacks.parserStop.call(context, {time: new Date().getTime()});
+                    callbacks.parserStop.call(context, {time:new Date().getTime()});
                 }
             } catch (e) {
                 if (callbacks.error) {
@@ -5131,19 +5141,10 @@
             }
             return this;
         }
-    };
-
-    cssParser = function () {
-        return new cssParser.prototype.init();
-    };
-
-    cssParser.prototype = {
-        constructor:cssParser,
-        init:CssParserInstance
-    };
+    });
 
     wef.cssParser = cssParser;
 
-    logger.info("cssParser plugged to wef.cssParser")
+    logger.info("cssParser plugged to wef.cssParser");
 
 })(window.wef);
