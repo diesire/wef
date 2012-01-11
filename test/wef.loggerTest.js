@@ -31,18 +31,19 @@ test("public properties", function () {
 
 test("pubic methods", function () {
     var msg = "qunit testing, don't worry";
-    equal(typeof wef.logger().trace(), typeof wef.logger(), "trace()");
-    equal(typeof wef.logger().log(), typeof wef.logger(), "log()");
-    equal(typeof wef.logger().debug(msg, ": debug"), typeof wef.logger(), "debug()");
-    equal(typeof wef.logger().info(msg, ": info"), typeof wef.logger(), "info()");
-    equal(typeof wef.logger().warn(msg, ": warn"), typeof wef.logger(), "warn()");
-    equal(typeof wef.logger().error(msg, ": error"), typeof wef.logger(), "error()");
-    equal(typeof wef.logger().group(msg, ": group"), typeof wef.logger(), "group()");
-    equal(typeof wef.logger().groupEnd(msg, ": endGroup"), typeof wef.logger(), "groupEnd()");
-    equal(typeof wef.logger().filter("all"), typeof wef.logger(), "filter()");
+    deepEqual(wef.logger().trace(), wef.logger(), "trace()");
+    deepEqual(wef.logger().log(), wef.logger(), "log()");
+    deepEqual(wef.logger().debug(msg, ": debug"), wef.logger(), "debug()");
+    deepEqual(wef.logger().info(msg, ": info"), wef.logger(), "info()");
+    deepEqual(wef.logger().warn(msg, ": warn"), wef.logger(), "warn()");
+    deepEqual(wef.logger().error(msg, ": error"), wef.logger(), "error()");
+    deepEqual(wef.logger().group(msg, ": group"), wef.logger(), "group()");
+    deepEqual(wef.logger().groupEnd(msg, ": endGroup"), wef.logger(), "groupEnd()");
+    deepEqual(wef.logger().filter("all"), wef.logger(), "filter()");
 
-    equal(typeof wef.logger.filter("all"), typeof wef.logger, "logger.filter()");
-    equal(typeof wef.logger.filter({logLevel:wef.logger.LOGLEVEL.all,pattern: ".*"}), typeof wef.logger, "logger.filter()");
+    equal(wef.logger.filter, undefined, "NO logger.filter()");
+    deepEqual(wef.logger.fn.filter("all"), wef.logger.fn, "logger.fn.filter()");
+    deepEqual(wef.logger().filter({logLevel:wef.logger.fn.loglevel.all, pattern:".*"}), wef.logger(), "logger().filter()");
 });
 
 test("chaining", function () {
