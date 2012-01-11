@@ -43,7 +43,7 @@
             }
             return tmp;
         }
-        wef.f.error("InvalidArgumentException: incorrect argument type");
+        wef.fn.error("InvalidArgumentException: incorrect argument type");
         return null;
     };
 
