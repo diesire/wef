@@ -56,8 +56,8 @@
 
     logger.prototype = {
         constructor:logger,
-        LOGLEVEL: LOGLEVEL,
         version:"0.1.0",
+        loglevel: LOGLEVEL,
         formatter:new textFormatter(),
         init:function (logName) {
             this.logName = logName;
@@ -114,8 +114,6 @@
     };
 
     logger.filter = logger.prototype.filter;
-
-    logger.LOGLEVEL = logger.prototype.LOGLEVEL;
 
     logger.version = logger.prototype.version;
 
