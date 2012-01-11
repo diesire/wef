@@ -39,7 +39,9 @@
                 return tmp;
             }
             for (property in giver) {
-                tmp[property] = giver[property];
+                if (giver.hasOwnProperty(property)) {
+                    tmp[property] = giver[property];
+                }
             }
             return tmp;
         }
