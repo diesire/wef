@@ -26,3 +26,19 @@ To build wef
 For testing, wef uses [Qunit](http://docs.jquery.com/QUnit)
 
 *   Open `test/test.html` in your browser
+
+Changelog
+---------
+
+####v0.2####
+
+*   Add more tests
+*   Fix cssParser.callbacks persistence error
+*   Unify wef.module.fn API (version, filter, loglevel)
+*   Fix wef.fn.extend
+*   Clean cssParser log messages
+*   Delete log.filter call in cssParser
+
+####v0.1####
+
+*   First release
