@@ -113,8 +113,6 @@
         }
     };
 
-    logger.filter = logger.prototype.filter;
-
     logger.fn = logger.prototype;
 
     logger.prototype.backend = window.console || {};
@@ -150,6 +148,8 @@
     logger.prototype.backend.groupEnd = window.console.groupEnd || logger.prototype.backend.failSafeGroupEnd;
 
     logger.prototype.init.prototype = logger.prototype;
+
+    //TODO: refactor using wef.extend
 
     logger.prototype.init.prototype.debug = function (message) {
         if (registered[lastLogger].logLevel > LOGLEVEL.debug) {
