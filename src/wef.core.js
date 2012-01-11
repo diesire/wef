@@ -14,7 +14,7 @@
 
     wef.prototype = {
         constructor:wef,
-        version:"0.1.0",
+        version:"0.2.0",
         init:function () {
             return this;
         }
@@ -22,7 +22,7 @@
 
     wef.fn = wef.prototype;
 
-    wef.prototype.init = function() {
+    wef.prototype.init = function () {
         return this;
     };
 
