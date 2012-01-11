@@ -65,27 +65,28 @@ test("parse exceptions", function () {
 });
 
 asyncTest("events", function () {
-    var text = "body {display: \"a\"}", events = [];
+    var text = "body {display: \"a\"}", events = [], parser;
     expect(10);
-    wef.cssParser().whenStart(function (o) {
+    parser = wef.cssParser();
+    parser.whenStart(function (o) {
         equal(typeof o.time, "number", "start time in milliseconds");
         events.push("start");
     });
-    wef.cssParser().whenProperty(function (property) {
+    parser.whenProperty(function (property) {
         notEqual(property.selectorText, undefined, "is property.selectorText valid?");
         notEqual(property.declaration.property, undefined, "is declaration.property valid?")
         notEqual(property.declaration.valueText, undefined, "is declaration.valueText valid?")
         events.push("prop");
     });
-    wef.cssParser().whenCssRule(function (cssRule) {
+    parser.whenCssRule(function (cssRule) {
         notEqual(cssRule.currentLine, undefined, "is cssRule data valid?");
         events.push("css");
     });
-    wef.cssParser().whenStop(function (o) {
+    parser.whenStop(function (o) {
         equal(typeof o.time, "number", "stop time in milliseconds");
         events.push("stop");
     });
-    wef.cssParser().parse(text);
+    parser.parse(text);
 
     setTimeout(function () {
         equal("start", events.shift());
@@ -97,27 +98,27 @@ asyncTest("events", function () {
 });
 
 asyncTest("error event", function () {
-    var text = "", events = [];
-
-    wef.cssParser().whenStart(function () {
-        events.push("start");
+    var text = "", events = [], parser;
+    expect(1);
+    parser = wef.cssParser();
+    parser.whenStart(function () {
+        ok(false);
     });
-    wef.cssParser().whenProperty(function () {
-        events.push("prop");
+    parser.whenProperty(function () {
+        ok(false);
     });
-    wef.cssParser().whenCssRule(function () {
-        events.push("css");
+    parser.whenCssRule(function () {
+        ok(false);
     });
-    wef.cssParser().whenStop(function () {
-        events.push("stop");
+    parser.whenStop(function () {
+        ok(false);
     });
-    wef.cssParser().whenError(function () {
-            events.push("error");
-        });
-    wef.cssParser().parse(text);
+    parser.whenError(function () {
+        events.push("error");
+    });
+    parser.parse(text);
 
     setTimeout(function () {
-        expect(1);
         equal("error", events.shift());
         start();
     }, 100);
