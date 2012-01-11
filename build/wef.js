@@ -14,7 +14,7 @@
 
     wef.prototype = {
         constructor:wef,
-        version:"0.1.0",
+        version:"0.2.0",
         init:function () {
             return this;
         }
@@ -22,7 +22,7 @@
 
     wef.fn = wef.prototype;
 
-    wef.prototype.init = function() {
+    wef.prototype.init = function () {
         return this;
     };
 
@@ -39,11 +39,13 @@
                 return tmp;
             }
             for (property in giver) {
-                tmp[property] = giver[property];
+                if (giver.hasOwnProperty(property)) {
+                    tmp[property] = giver[property];
+                }
             }
             return tmp;
         }
-        wef.f.error("InvalidArgumentException: incorrect argument type");
+        wef.fn.error("InvalidArgumentException: incorrect argument type");
         return null;
     };
 
@@ -125,8 +127,8 @@
 
     logger.prototype = {
         constructor:logger,
-        LOGLEVEL: LOGLEVEL,
-        version:"0.1.0",
+        loglevel: LOGLEVEL,
+        version:"0.2.0",
         formatter:new textFormatter(),
         init:function (logName) {
             this.logName = logName;
@@ -182,11 +184,7 @@
         }
     };
 
-    logger.filter = logger.prototype.filter;
-
-    logger.LOGLEVEL = logger.prototype.LOGLEVEL;
-
-    logger.version = logger.prototype.version;
+    logger.fn = logger.prototype;
 
     logger.prototype.backend = window.console || {};
 
@@ -221,6 +219,8 @@
     logger.prototype.backend.groupEnd = window.console.groupEnd || logger.prototype.backend.failSafeGroupEnd;
 
     logger.prototype.init.prototype = logger.prototype;
+
+    //TODO: refactor using wef.extend
 
     logger.prototype.init.prototype.debug = function (message) {
         if (registered[lastLogger].logLevel > LOGLEVEL.debug) {
@@ -3230,7 +3230,7 @@
                         }
 
                         else if (!fFamily && // *MUST* be last to be tested here
-                            (token.isString() || token.isIdent())) {
+                                 (token.isString() || token.isIdent())) {
                             var lastWasComma = false;
                             while (true) {
                                 if (!token.isNotNull()) {
@@ -5322,83 +5322,102 @@
         }
     };
 
-    var callbacks = {
-        parserStar:undefined,
-        parserStop:undefined,
-        cssRuleFound:undefined,
-        propertyFound:undefined,
-        error:undefined
-    }, cssParser, logger, CssParserInstance;
+    var cssParser, logger, CssParserInstance;
 
-    logger = wef.logger("cssParser").filter("none");
+    logger = wef.logger("wef.cssParser");
 
-    CssParserInstance = function () {
-        return this;
+    cssParser = function () {
+        return new cssParser.prototype.init();
     };
 
-    CssParserInstance.prototype = {
-        version:"0.1.0",
+    cssParser.prototype = {
+        version:"0.2.0",
+        callbacks:{
+            parserStar:undefined,
+            parserStop:undefined,
+            cssRuleFound:undefined,
+            propertyFound:undefined,
+            error:undefined
+        },
+        constructor:cssParser,
+        init:function () {
+            this.callbacks = {
+                parserStar:undefined,
+                parserStop:undefined,
+                cssRuleFound:undefined,
+                propertyFound:undefined,
+                error:undefined
+            };
+            return this;
+        }
+    };
 
+    cssParser.fn = cssParser.prototype;
+
+    cssParser.prototype.init.prototype = cssParser.prototype;
+
+    wef.extend(cssParser.prototype.init.prototype, {
         backend:undefined,
 
         whenStart:function (callback) {
             if (wef.isFunction(callback)) {
-                callbacks.parserStar = callback;
-                logger.debug("when parserStar => ", callback);
+                logger.debug("set parserStart callback");
+                this.callbacks.parserStar = callback;
             }
             return this;
         },
 
         whenStop:function (callback) {
             if (wef.isFunction(callback)) {
-                callbacks.parserStop = callback;
-                logger.debug("when parserStop => ", callback);
+                logger.debug("set parserStop callback");
+                this.callbacks.parserStop = callback;
             }
             return this;
         },
 
         whenCssRule:function (callback) {
             if (wef.isFunction(callback)) {
-                callbacks.cssRuleFound = callback;
-                logger.debug("when CssRuleFound => ", callback);
+                logger.debug("set CssRuleFound callback");
+                this.callbacks.cssRuleFound = callback;
             }
             return this;
         },
 
         whenProperty:function (callback) {
             if (wef.isFunction(callback)) {
-                callbacks.propertyFound = callback;
-                logger.debug("when propertyFound => ", callback);
+                logger.debug("set propertyFound callback");
+                this.callbacks.propertyFound = callback;
             }
             return this;
         },
 
         whenError:function (callback) {
             if (wef.isFunction(callback)) {
-                callbacks.error = callback;
-                logger.debug("when error -> ", callback);
+                logger.debug("set error callback");
+                this.callbacks.error = callback;
             }
             return this;
         },
 
         parse:function (data) {
+            var sheet, property, context = this;
             try {
                 if (!data || !wef.isString(data) || data === "") {
                     var message = "InvalidArgumentException - data must be a non empty string";
                     logger.error(message);
                     throw new Error(message);
                 }
-                if (callbacks.parserStar) {
-                    logger.info("parserStart callback");
-                    callbacks.parserStar.call(new Date().toString());
+                if (context.callbacks.parserStar) {
+                    logger.debug("call parserStart callback");
+                    context.callbacks.parserStar.call(context, {time:new Date().getTime()});
                 }
-                var sheet = new CSSParser().parse(data, false, false), property;
+                sheet = new CSSParser().parse(data, false, false);
                 //start
                 sheet.cssRules.forEach(function (cssRule) {
                     logger.debug("cssRule:", cssRule);
-                    if (callbacks.cssRuleFound) {
-                        logger.info("cssRuleFound callback");
-                        callbacks.cssRuleFound.call(cssRule);
+                    if (context.callbacks.cssRuleFound) {
+                        logger.debug("call cssRuleFound callback");
+                        context.callbacks.cssRuleFound.call(context, cssRule);
                     }
                     //ErrorRule
                     if (cssRule.type === 0) {
@@ -5407,46 +5426,39 @@
                         throw new Error(message);
                     }
                     cssRule.declarations.forEach(function (declaration) {
-                        property = {selectorText:cssRule.selectorText(),
-                            declaration:new StyleDeclaration(declaration.property, declaration.valueText)};
+                        property = {
+                            selectorText:cssRule.selectorText(),
+                            declaration:new StyleDeclaration(declaration.property, declaration.valueText)
+                        };
                         logger.debug("property:", property);
-                        if (callbacks.propertyFound) {
-                            logger.info("propertyFound callback");
-                            callbacks.propertyFound.call(property);
+                        if (context.callbacks.propertyFound) {
+                            logger.debug("call propertyFound callback");
+                            context.callbacks.propertyFound.call(context, property);
                         }
                     });
                 });
                 //done
-                if (callbacks.parserStop) {
-                    logger.info("parserStop callback");
-                    callbacks.parserStop.call(new Date().toString());
+                if (context.callbacks.parserStop) {
+                    logger.debug("call parserStop callback");
+                    context.callbacks.parserStop.call(context, {time:new Date().getTime()});
                 }
             } catch (e) {
-                if (callbacks.error) {
-                    logger.error("error callback:", e);
-                    callbacks.error.call(e.message);
+                if (context.callbacks.error) {
+                    logger.error("call error callback:", e);
+                    context.callbacks.error.call(context, e.message);
                     return this;
                 } else {
-                    logger.error("error -> wef.error:", e);
+                    logger.error("unhandled error call wef.error:", e);
                     wef.error(e.message);
                     return null;
                 }
             }
             return this;
         }
-    };
-
-    cssParser = function () {
-        return new cssParser.prototype.init();
-    };
-
-    cssParser.prototype = {
-        constructor:cssParser,
-        init:CssParserInstance
-    };
+    });
 
     wef.cssParser = cssParser;
 
-    logger.info("cssParser plugged to wef.cssParser")
+    logger.info("cssParser plugged to wef.cssParser");
 
 })(window.wef);
