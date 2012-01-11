@@ -56,8 +56,8 @@
 
     logger.prototype = {
         constructor:logger,
-        version:"0.1.0",
         loglevel: LOGLEVEL,
+        version:"0.2.0",
         formatter:new textFormatter(),
         init:function (logName) {
             this.logName = logName;
@@ -115,7 +115,7 @@
 
     logger.filter = logger.prototype.filter;
 
-    logger.version = logger.prototype.version;
+    logger.fn = logger.prototype;
 
     logger.prototype.backend = window.console || {};
 
