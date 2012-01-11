@@ -16,6 +16,8 @@ test("constructor", function () {
 
 test("public properties", function () {
     equal(typeof wef.cssParser().version, "string", "wef.cssParser().version");
+    equal(wef.cssParser.version, undefined, "NO wef.cssParser.version");
+    equal(typeof wef.cssParser.fn.version, "string", "wef.cssParser.fn.version");
 });
 
 test("pubic methods", function () {
