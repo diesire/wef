@@ -23,6 +23,16 @@ test("public properties", function () {
 test("pubic methods", function () {
     var text = 'body { height: 100%; display: "a.b.c"  /2em "....."  /1em "d.e.f" "....."  /1em "g.h.i"  /2em 5em 1em  *  1em 10em}';
     notEqual(wef.cssParser().parse(text), null, "parse(string) ok");
+    notEqual(wef.cssParser().whenStart(function () {
+    }), null, "whenStart()");
+    notEqual(wef.cssParser().whenCssRule(function () {
+    }), null, "whenCssRule()");
+    notEqual(wef.cssParser().whenProperty(function () {
+    }), null, "whenProperty()");
+    notEqual(wef.cssParser().whenStop(function () {
+    }), null, "whenStop()");
+    notEqual(wef.cssParser().whenError(function () {
+    }), null, "whenError()");
 });
 
 test("parse exceptions", function () {
