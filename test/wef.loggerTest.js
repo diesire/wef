@@ -16,15 +16,17 @@ test("wef.logger.fn", function () {
 
 test("constructor", function () {
     equal(typeof wef.logger(), "object", "empty constructor returns an object");
-
     equal(typeof wef.logger("test"), "object", "empty constructor returns an object");
 });
 
 test("public properties", function () {
     equal(typeof wef.logger().version, "string", "wef.logger().version");
-    equal(typeof wef.logger.version, "string", "wef.logger.version");
-    equal(typeof wef.logger.LOGLEVEL.all, "number", "wef.logger.LOGLEVEL.all");
-    equal(typeof wef.logger().LOGLEVEL.all, "number", "wef.logger().LOGLEVEL.all");
+    equal(wef.logger.version, undefined, "NO wef.logger.version");
+    equal(typeof wef.logger.fn.version, "string", "wef.logger.fn.version");
+    equal(wef.logger.LOGLEVEL, undefined, "NO wef.logger.LOGLEVEL");
+    equal(wef.logger().LOGLEVEL, undefined, "NO wef.logger().LOGLEVEL");
+    equal(typeof wef.logger.fn.loglevel.all, "number", "wef.logger.fn.loglevel.all");
+    equal(typeof wef.logger().loglevel.all, "number", "wef.logger().loglevel.all");
 });
 
 test("pubic methods", function () {
