@@ -5016,13 +5016,7 @@
         }
     };
 
-    var callbacks = {
-        parserStar:undefined,
-        parserStop:undefined,
-        cssRuleFound:undefined,
-        propertyFound:undefined,
-        error:undefined
-    }, cssParser, logger, CssParserInstance;
+    var cssParser, logger, CssParserInstance;
 
     logger = wef.logger("wef.cssParser");
 
@@ -5032,8 +5026,22 @@
 
     cssParser.prototype = {
         version:"0.2.0",
+        callbacks:{
+            parserStar:undefined,
+            parserStop:undefined,
+            cssRuleFound:undefined,
+            propertyFound:undefined,
+            error:undefined
+        },
         constructor:cssParser,
         init:function () {
+            this.callbacks = {
+                parserStar:undefined,
+                parserStop:undefined,
+                cssRuleFound:undefined,
+                propertyFound:undefined,
+                error:undefined
+            };
             return this;
         }
     };
@@ -5048,7 +5056,7 @@
         whenStart:function (callback) {
             if (wef.isFunction(callback)) {
                 logger.debug("set parserStart callback");
-                callbacks.parserStar = callback;
+                this.callbacks.parserStar = callback;
             }
             return this;
         },
@@ -5056,7 +5064,7 @@
         whenStop:function (callback) {
             if (wef.isFunction(callback)) {
                 logger.debug("set parserStop callback");
-                callbacks.parserStop = callback;
+                this.callbacks.parserStop = callback;
             }
             return this;
         },
@@ -5064,7 +5072,7 @@
         whenCssRule:function (callback) {
             if (wef.isFunction(callback)) {
                 logger.debug("set CssRuleFound callback");
-                callbacks.cssRuleFound = callback;
+                this.callbacks.cssRuleFound = callback;
             }
             return this;
         },
@@ -5072,7 +5080,7 @@
         whenProperty:function (callback) {
             if (wef.isFunction(callback)) {
                 logger.debug("set propertyFound callback");
-                callbacks.propertyFound = callback;
+                this.callbacks.propertyFound = callback;
             }
             return this;
         },
@@ -5080,7 +5088,7 @@
         whenError:function (callback) {
             if (wef.isFunction(callback)) {
                 logger.debug("set error callback");
-                callbacks.error = callback;
+                this.callbacks.error = callback;
             }
             return this;
         },
@@ -5093,17 +5101,17 @@
                     logger.error(message);
                     throw new Error(message);
                 }
-                if (callbacks.parserStar) {
+                if (context.callbacks.parserStar) {
                     logger.debug("call parserStart callback");
-                    callbacks.parserStar.call(context, {time:new Date().getTime()});
+                    context.callbacks.parserStar.call(context, {time:new Date().getTime()});
                 }
                 sheet = new CSSParser().parse(data, false, false);
                 //start
                 sheet.cssRules.forEach(function (cssRule) {
                     logger.debug("cssRule:", cssRule);
-                    if (callbacks.cssRuleFound) {
+                    if (context.callbacks.cssRuleFound) {
                         logger.debug("call cssRuleFound callback");
-                        callbacks.cssRuleFound.call(context, cssRule);
+                        context.callbacks.cssRuleFound.call(context, cssRule);
                     }
                     //ErrorRule
                     if (cssRule.type === 0) {
@@ -5117,21 +5125,21 @@
                             declaration:new StyleDeclaration(declaration.property, declaration.valueText)
                         };
                         logger.debug("property:", property);
-                        if (callbacks.propertyFound) {
+                        if (context.callbacks.propertyFound) {
                             logger.debug("call propertyFound callback");
-                            callbacks.propertyFound.call(context, property);
+                            context.callbacks.propertyFound.call(context, property);
                         }
                     });
                 });
                 //done
-                if (callbacks.parserStop) {
+                if (context.callbacks.parserStop) {
                     logger.debug("call parserStop callback");
-                    callbacks.parserStop.call(context, {time:new Date().getTime()});
+                    context.callbacks.parserStop.call(context, {time:new Date().getTime()});
                 }
             } catch (e) {
-                if (callbacks.error) {
+                if (context.callbacks.error) {
                     logger.error("call error callback:", e);
-                    callbacks.error.call(context, e.message);
+                    context.callbacks.error.call(context, e.message);
                     return this;
                 } else {
                     logger.error("unhandled error call wef.error:", e);
