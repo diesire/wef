@@ -28,8 +28,8 @@
 
     wef.prototype.init.prototype = wef.prototype;
 
-    wef.fn.extend = function (receiver, giver) {
-        var tmp = receiver, property;
+    wef.fn.extend = function (receiver, giver, filter) {
+        var tmp = receiver, property, propertyList;
         //both must be objects
         if (typeof receiver === "object" && typeof giver === "object") {
             if (tmp === null) {
@@ -38,8 +38,9 @@
             if (receiver === null) {
                 return tmp;
             }
-            for (property in giver) {
-                if (giver.hasOwnProperty(property)) {
+            propertyList = filter || giver;
+            for (property in propertyList) {
+                if (giver.hasOwnProperty(property) && giver[property] !== undefined) {
                     tmp[property] = giver[property];
                 }
             }
