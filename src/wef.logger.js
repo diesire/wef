@@ -156,8 +156,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.debug.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
-        return this;
+        if (Function.prototype.bind && console && typeof console.debug == "object") {
+            var debug = Function.prototype.bind.call(console.debug, console);
+            debug.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.debug.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.error = function (message) {
@@ -165,8 +171,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.error.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
-        return this;
+        if (Function.prototype.bind && console && typeof console.error == "object") {
+            var error = Function.prototype.bind.call(console.error, console);
+            error.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.error.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.info = function (message) {
@@ -174,8 +186,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.info.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
-        return this;
+        if (Function.prototype.bind && console && typeof console.info == "object") {
+            var info = Function.prototype.bind.call(console.info, console);
+            info.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.info.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.warn = function (message) {
@@ -183,8 +201,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.warn.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
-        return this;
+        if (Function.prototype.bind && console && typeof console.warn == "object") {
+            var warn = Function.prototype.bind.call(console.warn, console);
+            warn.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.warn.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.log = function (message) {
@@ -192,8 +216,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.log.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
-        return this;
+        if (Function.prototype.bind && console && typeof console.log == "object") {
+            var log = Function.prototype.bind.call(console.log, console);
+            log.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.log.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.trace = function () {
@@ -201,8 +231,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.trace.call(this.backend);
-        return this;
+        if (Function.prototype.bind && console && typeof console.trace == "object") {
+            var trace = Function.prototype.bind.call(console.trace, console);
+            trace.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.trace.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.group = function (message) {
