@@ -28,8 +28,8 @@
 
     wef.prototype.init.prototype = wef.prototype;
 
-    wef.fn.extend = function (receiver, giver) {
-        var tmp = receiver, property;
+    wef.fn.extend = function (receiver, giver, filter) {
+        var tmp = receiver, property, propertyList;
         //both must be objects
         if (typeof receiver === "object" && typeof giver === "object") {
             if (tmp === null) {
@@ -38,8 +38,9 @@
             if (receiver === null) {
                 return tmp;
             }
-            for (property in giver) {
-                if (giver.hasOwnProperty(property)) {
+            propertyList = filter || giver;
+            for (property in propertyList) {
+                if (giver.hasOwnProperty(property) && giver[property] !== undefined) {
                     tmp[property] = giver[property];
                 }
             }
@@ -70,6 +71,23 @@
 
 })();
 /*!
+ * Wef crossBrowser
+ * Copyright (c) 2011 Pablo Escalada
+ * MIT Licensed
+ */
+(function (wef) {
+
+    if (!('map' in Array.prototype)) {
+        Array.prototype.map = function (mapper, that /*opt*/) {
+            var other = new Array(this.length);
+            for (var i = 0, n = this.length; i < n; i++)
+                if (i in this)
+                    other[i] = mapper.call(that, this[i], i, this);
+            return other;
+        };
+    }
+
+})(window.wef);/*!
  * Wef logger
  * Copyright (c) 2011 Pablo Escalada
  * MIT Licensed
@@ -227,8 +245,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.debug.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
-        return this;
+        if (Function.prototype.bind && console && typeof console.debug == "object") {
+            var debug = Function.prototype.bind.call(console.debug, console);
+            debug.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.debug.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.error = function (message) {
@@ -236,8 +260,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.error.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
-        return this;
+        if (Function.prototype.bind && console && typeof console.error == "object") {
+            var error = Function.prototype.bind.call(console.error, console);
+            error.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.error.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.info = function (message) {
@@ -245,8 +275,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.info.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
-        return this;
+        if (Function.prototype.bind && console && typeof console.info == "object") {
+            var info = Function.prototype.bind.call(console.info, console);
+            info.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.info.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.warn = function (message) {
@@ -254,8 +290,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.warn.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
-        return this;
+        if (Function.prototype.bind && console && typeof console.warn == "object") {
+            var warn = Function.prototype.bind.call(console.warn, console);
+            warn.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.warn.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.log = function (message) {
@@ -263,8 +305,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.log.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
-        return this;
+        if (Function.prototype.bind && console && typeof console.log == "object") {
+            var log = Function.prototype.bind.call(console.log, console);
+            log.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.log.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.trace = function () {
@@ -272,8 +320,14 @@
             filteredLogs++;
             return this;
         }
-        this.backend.trace.call(this.backend);
-        return this;
+        if (Function.prototype.bind && console && typeof console.trace == "object") {
+            var trace = Function.prototype.bind.call(console.trace, console);
+            trace.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        } else {
+            this.backend.trace.apply(this.backend, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
+            return this;
+        }
     };
 
     logger.prototype.init.prototype.group = function (message) {
@@ -361,11 +415,11 @@
 
     /* FROM http://peter.sh/data/vendor-prefixed-css.php?js=1 */
 
-    const kENGINES = [
+    var kENGINES = [
         "webkit", "presto", "trident", "generic"
     ];
 
-    const kCSS_VENDOR_VALUES = {
+    var kCSS_VENDOR_VALUES = {
         "-moz-box":{"webkit":"-webkit-box", "presto":"", "trident":"", "generic":"box" },
         "-moz-inline-box":{"webkit":"-webkit-inline-box", "presto":"", "trident":"", "generic":"inline-box" },
         "-moz-initial":{"webkit":"", "presto":"", "trident":"", "generic":"initial" },
@@ -391,7 +445,7 @@
             "generic":FilterRepeatingGradientForOutput }
     };
 
-    const kCSS_VENDOR_PREFIXES = {"lastUpdate":1304175007, "properties":[
+    var kCSS_VENDOR_PREFIXES = {"lastUpdate":1304175007, "properties":[
         {"gecko":"", "webkit":"", "presto":"", "trident":"-ms-accelerator", "status":"P"},
         {"gecko":"", "webkit":"", "presto":"-wap-accesskey", "trident":"", "status":""},
         {"gecko":"-moz-animation", "webkit":"-webkit-animation", "presto":"", "trident":"", "status":"WD"},
@@ -657,7 +711,7 @@
         {"gecko":"", "webkit":"zoom", "presto":"", "trident":"-ms-zoom", "status":""}
     ]};
 
-    const kCSS_PREFIXED_VALUE = [
+    var kCSS_PREFIXED_VALUE = [
         {"gecko":"-moz-box", "webkit":"-moz-box", "presto":"", "trident":"", "generic":"box"}
     ];
 
@@ -1151,7 +1205,7 @@
         },
 
         parseMediaQuery:function (aString) {
-            const kCONSTRAINTS = {
+            var kCONSTRAINTS = {
                 "width":true,
                 "min-width":true,
                 "max-width":true,
