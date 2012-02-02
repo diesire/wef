@@ -29,7 +29,7 @@
     wef.prototype.init.prototype = wef.prototype;
 
     wef.fn.extend = function (receiver, giver, filter) {
-        var tmp = receiver, property, propertyList;
+        var tmp = receiver, property;
         //both must be objects
         if (typeof receiver === "object" && typeof giver === "object") {
             if (tmp === null) {
@@ -38,9 +38,9 @@
             if (receiver === null) {
                 return tmp;
             }
-            propertyList = filter || giver;
-            for (property in propertyList) {
-                if (giver.hasOwnProperty(property) && giver[property] !== undefined) {
+
+            for (property in giver) {
+                if ((!filter || filter.indexOf(property) !== -1) && giver.hasOwnProperty(property) && giver[property] !== undefined) {
                     tmp[property] = giver[property];
                 }
             }
@@ -48,6 +48,11 @@
         }
         wef.fn.error("InvalidArgumentException: incorrect argument type");
         return null;
+    };
+
+    wef.fn.hasOwnProperty = function(o, property) {
+        //literal objects in IE don't have hasOwnProperty
+        return Object.prototype.hasOwnProperty.call(o, property);
     };
 
     wef.fn.isFunction = function (obj) {
