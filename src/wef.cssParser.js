@@ -55,11 +55,11 @@
 
     /* FROM http://peter.sh/data/vendor-prefixed-css.php?js=1 */
 
-    const kENGINES = [
+    var kENGINES = [
         "webkit", "presto", "trident", "generic"
     ];
 
-    const kCSS_VENDOR_VALUES = {
+    var kCSS_VENDOR_VALUES = {
         "-moz-box":{"webkit":"-webkit-box", "presto":"", "trident":"", "generic":"box" },
         "-moz-inline-box":{"webkit":"-webkit-inline-box", "presto":"", "trident":"", "generic":"inline-box" },
         "-moz-initial":{"webkit":"", "presto":"", "trident":"", "generic":"initial" },
@@ -85,7 +85,7 @@
             "generic":FilterRepeatingGradientForOutput }
     };
 
-    const kCSS_VENDOR_PREFIXES = {"lastUpdate":1304175007, "properties":[
+    var kCSS_VENDOR_PREFIXES = {"lastUpdate":1304175007, "properties":[
         {"gecko":"", "webkit":"", "presto":"", "trident":"-ms-accelerator", "status":"P"},
         {"gecko":"", "webkit":"", "presto":"-wap-accesskey", "trident":"", "status":""},
         {"gecko":"-moz-animation", "webkit":"-webkit-animation", "presto":"", "trident":"", "status":"WD"},
@@ -351,7 +351,7 @@
         {"gecko":"", "webkit":"zoom", "presto":"", "trident":"-ms-zoom", "status":""}
     ]};
 
-    const kCSS_PREFIXED_VALUE = [
+    var kCSS_PREFIXED_VALUE = [
         {"gecko":"-moz-box", "webkit":"-moz-box", "presto":"", "trident":"", "generic":"box"}
     ];
 
@@ -845,7 +845,7 @@
         },
 
         parseMediaQuery:function (aString) {
-            const kCONSTRAINTS = {
+            var kCONSTRAINTS = {
                 "width":true,
                 "min-width":true,
                 "max-width":true,
