@@ -11,5 +11,5 @@ test("namespace", function() {
 });
 
 test("public properties", function() {
-    equal(typeof wef.version, "string", "wef().version");
+    equal(typeof wef.version, "string", "wef.version");
 });

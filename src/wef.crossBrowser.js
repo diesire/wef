@@ -5,7 +5,7 @@
  */
 (function (wef) {
 
-    if (!('map' in Array.prototype)) {
+    if (!("map" in Array.prototype)) {
         Array.prototype.map = function (mapper, that /*opt*/) {
             var other = new Array(this.length);
             for (var i = 0, n = this.length; i < n; i++)
