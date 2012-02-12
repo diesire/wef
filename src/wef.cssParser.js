@@ -3,9 +3,12 @@
  * Copyright (c) 2011 Pablo Escalada
  * MIT Licensed
  *
- * Uses JSCSSP by Daniel Glazman <daniel.glazman@disruptive-innovations.com> licensed under MPL 1.1/GPL 2.0/LGPL 2.1
+ * Uses a lightly modified version of JSCSSP
+ * by Daniel Glazman <daniel.glazman@disruptive-innovations.com>
+ * licensed under MPL 1.1/GPL 2.0/LGPL 2.1
  */
 (function (wef) {
+    /**#nocode+*/
 
     /* ***** BEGIN LICENSE BLOCK *****
      * Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -4997,11 +5000,16 @@
         return "";
     }
 
+    /**#nocode-*/
 
     /**
-     * CSS Style declaration
-     * @param property property name
-     * @param valueText property value
+     * Creates a style declaration
+     *
+     * @param {string} property property name
+     * @param {string} valueText property value
+     *
+     * @class CSS Property declaration
+     * @name StyleDeclaration
      */
     function StyleDeclaration(property, valueText) {
         this.property = property;
@@ -5009,24 +5017,42 @@
     }
 
     StyleDeclaration.prototype = {
+        /**
+         * Property name
+         * @type string
+         */
         property:"",
+        /**
+         * Property value
+         * @type string
+         */
         valueText:"",
-        toString:function () {
-            return this.property + ": " + this.valueText;
-        }
     };
 
     var cssParser, logger, CssParserInstance;
 
     logger = wef.logger("wef.cssParser");
 
+    /**
+     * Creates a CSS parser
+     *
+     * @class CSS parser
+     */
     cssParser = function () {
         return new cssParser.prototype.init();
     };
 
     cssParser.prototype = {
+        /**
+         * Version number*/
         version:"0.2.0",
+        /**
+         * Stores callback functions. Looks like register events
+         */
         callbacks:{
+            /**
+             * todo
+             */
             parserStar:undefined,
             parserStop:undefined,
             cssRuleFound:undefined,
@@ -5034,6 +5060,9 @@
             error:undefined
         },
         constructor:cssParser,
+        /**
+         * @ignore
+         */
         init:function () {
             this.callbacks = {
                 parserStar:undefined,
@@ -5046,110 +5075,181 @@
         }
     };
 
+    /**
+     * Extension point
+     */
     cssParser.fn = cssParser.prototype;
 
     cssParser.prototype.init.prototype = cssParser.prototype;
 
-    wef.extend(cssParser.prototype.init.prototype, {
-        backend:undefined,
+    wef.extend(cssParser.prototype.init.prototype,
+        /**
+         * @lends cssParser#
+         */
+               {
+                   /**
+                    * Reference to jscssp parser
+                    */
+                   backend:undefined,
 
-        whenStart:function (callback) {
-            if (wef.isFunction(callback)) {
-                logger.debug("set parserStart callback");
-                this.callbacks.parserStar = callback;
-            }
-            return this;
-        },
-
-        whenStop:function (callback) {
-            if (wef.isFunction(callback)) {
-                logger.debug("set parserStop callback");
-                this.callbacks.parserStop = callback;
-            }
-            return this;
-        },
-
-        whenCssRule:function (callback) {
-            if (wef.isFunction(callback)) {
-                logger.debug("set CssRuleFound callback");
-                this.callbacks.cssRuleFound = callback;
-            }
-            return this;
-        },
-
-        whenProperty:function (callback) {
-            if (wef.isFunction(callback)) {
-                logger.debug("set propertyFound callback");
-                this.callbacks.propertyFound = callback;
-            }
-            return this;
-        },
-
-        whenError:function (callback) {
-            if (wef.isFunction(callback)) {
-                logger.debug("set error callback");
-                this.callbacks.error = callback;
-            }
-            return this;
-        },
-
-        parse:function (data) {
-            var sheet, property, context = this;
-            try {
-                if (!data || !wef.isString(data) || data === "") {
-                    var message = "InvalidArgumentException - data must be a non empty string";
-                    logger.error(message);
-                    throw new Error(message);
-                }
-                if (context.callbacks.parserStar) {
-                    logger.debug("call parserStart callback");
-                    context.callbacks.parserStar.call(context, {time:new Date().getTime()});
-                }
-                sheet = new CSSParser().parse(data, false, false);
-                //start
-                sheet.cssRules.forEach(function (cssRule) {
-                    logger.debug("cssRule:", cssRule);
-                    if (context.callbacks.cssRuleFound) {
-                        logger.debug("call cssRuleFound callback");
-                        context.callbacks.cssRuleFound.call(context, cssRule);
-                    }
-                    //ErrorRule
-                    if (cssRule.type === 0) {
-                        var message = "ParserException - Error in line " + cssRule.currentLine + ": " + cssRule.parsedCssText;
-                        logger.error(message);
-                        throw new Error(message);
-                    }
-                    cssRule.declarations.forEach(function (declaration) {
-                        property = {
-                            selectorText:cssRule.selectorText(),
-                            declaration:new StyleDeclaration(declaration.property, declaration.valueText)
-                        };
-                        logger.debug("property:", property);
-                        if (context.callbacks.propertyFound) {
-                            logger.debug("call propertyFound callback");
-                            context.callbacks.propertyFound.call(context, property);
-                        }
-                    });
-                });
-                //done
-                if (context.callbacks.parserStop) {
-                    logger.debug("call parserStop callback");
-                    context.callbacks.parserStop.call(context, {time:new Date().getTime()});
-                }
-            } catch (e) {
-                if (context.callbacks.error) {
-                    logger.error("call error callback:", e);
-                    context.callbacks.error.call(context, e.message);
-                    return this;
-                } else {
-                    logger.error("unhandled error call wef.error:", e);
-                    wef.error(e.message);
-                    return null;
-                }
-            }
-            return this;
-        }
-    });
+                   /**
+                    * Calls parserStar callback
+                    * @param {Function}callback "Parser starts" callback
+                    */
+                   whenStart:function (callback) {
+                       if (wef.isFunction(callback)) {
+                           logger.debug("set parserStart callback");
+                           this.callbacks.parserStar = callback;
+                       }
+                       return this;
+                   },
+                   /**
+                    * Calls parserStop callback
+                    * @param {Function}callback "Parser stops" callback
+                    */
+                   whenStop:function (callback) {
+                       if (wef.isFunction(callback)) {
+                           logger.debug("set parserStop callback");
+                           this.callbacks.parserStop = callback;
+                       }
+                       return this;
+                   },
+                   /**
+                    * Calls cssRuleFound callback
+                    * @param {Function}callback "Css rule found" callback
+                    */
+                   whenCssRule:function (callback) {
+                       if (wef.isFunction(callback)) {
+                           logger.debug("set CssRuleFound callback");
+                           this.callbacks.cssRuleFound = callback;
+                       }
+                       return this;
+                   },
+                   /**
+                    * Calls propertyFound callback
+                    * @param {Function}callback "Property found" callback
+                    */
+                   whenProperty:function (callback) {
+                       if (wef.isFunction(callback)) {
+                           logger.debug("set propertyFound callback");
+                           this.callbacks.propertyFound = callback;
+                       }
+                       return this;
+                   },
+                   /**
+                    * Calls error callback
+                    * @param {Function}callback "Error" callback
+                    */
+                   whenError:function (callback) {
+                       if (wef.isFunction(callback)) {
+                           logger.debug("set error callback");
+                           this.callbacks.error = callback;
+                       }
+                       return this;
+                   },
+                   /**
+                    * Parses given text calling callbacks when registered actions happens
+                    * @param {string}data CSS code
+                    */
+                   parse:function (data) {
+                       var sheet, property, context = this;
+                       try {
+                           if (!data || !wef.isString(data) || data === "") {
+                               var message = "InvalidArgumentException - data must be a non empty string";
+                               logger.error(message);
+                               throw new Error(message);
+                           }
+                           if (context.callbacks.parserStar) {
+                               logger.debug("call parserStart callback");
+                               context.callbacks.parserStar.call(context,
+                                   /**
+                                    * @namespace Parser start data format
+                                    * @name StartCallbackData
+                                    */
+                                   /**
+                                    * @lends StartCallbackData#
+                                    */
+                                                                 {
+                                                                     /**
+                                                                      * Start time in millisecons
+                                                                      * @type Number
+                                                                      */
+                                                                     time:new Date().getTime()});
+                           }
+                           sheet = new CSSParser().parse(data, false, false);
+                           //start
+                           sheet.cssRules.forEach(function (cssRule) {
+                               logger.debug("cssRule:", cssRule);
+                               if (context.callbacks.cssRuleFound) {
+                                   logger.debug("call cssRuleFound callback");
+                                   context.callbacks.cssRuleFound.call(context, cssRule);
+                               }
+                               //ErrorRule
+                               if (cssRule.type === 0) {
+                                   var message = "ParserException - Error in line " + cssRule.currentLine + ": " + cssRule.parsedCssText;
+                                   logger.error(message);
+                                   throw new Error(message);
+                               }
+                               cssRule.declarations.forEach(function (declaration) {
+                                   /**
+                                    * @namespace CSS property found data format
+                                    * @name CSSParserProperty
+                                    */
+                                   property =
+                                   /**
+                                    * @lends CSSParserProperty#
+                                    */
+                                   {
+                                       /**
+                                        * Property selector
+                                        * @type string
+                                        */
+                                       selectorText:cssRule.selectorText(),
+                                       /**
+                                        * Property declaration
+                                        * @type StyleDeclaration
+                                        */
+                                       declaration:new StyleDeclaration(declaration.property, declaration.valueText)
+                                   };
+                                   logger.debug("property:", property);
+                                   if (context.callbacks.propertyFound) {
+                                       logger.debug("call propertyFound callback");
+                                       context.callbacks.propertyFound.call(context, property);
+                                   }
+                               });
+                           });
+                           //done
+                           if (context.callbacks.parserStop) {
+                               logger.debug("call parserStop callback");
+                               context.callbacks.parserStop.call(context,
+                                   /**
+                                    * @namespace Parser stop data format
+                                    * @name StopCallbackData
+                                    */
+                                   /**
+                                    * @lends StopCallbackData#
+                                    */
+                                                                 {
+                                                                     /**
+                                                                      * Stop time in millisecons
+                                                                      * @type Number
+                                                                      */
+                                                                     time:new Date().getTime()});
+                           }
+                       } catch (e) {
+                           if (context.callbacks.error) {
+                               logger.error("call error callback:", e);
+                               context.callbacks.error.call(context, e.message);
+                               return this;
+                           } else {
+                               logger.error("unhandled error call wef.error:", e);
+                               wef.error(e.message);
+                               return null;
+                           }
+                       }
+                       return this;
+                   }
+               });
 
     wef.cssParser = cssParser;
 

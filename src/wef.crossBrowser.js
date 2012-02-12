@@ -6,6 +6,11 @@
 (function (wef) {
 
     if (!("map" in Array.prototype)) {
+        /**
+         * Crossbrowser implementation of Array.map()
+         * @param {Array}mapper the source array
+         * @param [that] "this" object reference
+         */
         Array.prototype.map = function (mapper, that /*opt*/) {
             var other = new Array(this.length);
             for (var i = 0, n = this.length; i < n; i++)

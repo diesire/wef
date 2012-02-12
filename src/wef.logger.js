@@ -4,22 +4,67 @@
  * MIT Licensed
  */
 (function (wef) {
-    var LOGLEVEL = {
-        all:-1,
-        trace:1,
-        debug:2,
-        log:2,
-        info:3,
-        warn:4,
-        error:5,
-        none:100
-    }, textFormatter, registered = {}, lastLogger, failSafeIndentation = false, logger, filteredLogs = 0;
 
+    var LOGLEVEL,textFormatter,registered = {},lastLogger,failSafeIndentation = false,logger,filteredLogs = 0;
+
+    /**
+     * @namespace  Log level constants
+     */
+    LOGLEVEL = {
+        /**
+         * @lends LOGLEVEL
+         */
+        /**
+         * Max verbosity
+         */
+        all:-1,
+        /**
+         * Noisy
+         */
+        trace:1,
+        /**
+         * Useful for testing
+         */
+        debug:2,
+        /**
+         * Log and more important messages
+         */
+        log:2,
+        /**
+         * Info and more important messages
+         */
+        info:3,
+        /**
+         * Warn and error messages
+         */
+        warn:4,
+        /**
+         * Only error message
+         */
+        error:5,
+        /**
+         * Minimum verbosity. Zero logs
+         */
+        none:100
+    }
+
+    /**
+     * Create a textFormatter
+     *
+     * @class Plain text logger formatter
+     */
     textFormatter = function () {
         return this;
     };
 
     textFormatter.prototype = {
+
+        /**
+         * Formats logger messages
+         * @param {Array-like}messages logger messages
+         * @param {integer}indentationLevel indentation level
+         * @param {string}type message type
+         */
         format:function (messages, indentationLevel, type) {
             var tmp = [], levelMarks = "                                                                                            ", levelText, typeText;
             tmp = Array.prototype.slice.call(messages, tmp);
@@ -35,6 +80,20 @@
         }
     };
 
+    /**
+     * Creates a logger
+     *
+     * @param {string}[logName=default] Logger name
+     *
+     * @class Console logger withs vitamins.
+     * </p>
+     * Features:
+     * <ul>
+     *     <li>Named loggers</li>
+     *     <li>Filters</li>
+     *     <li>Failsafe logging functions</li>
+     * </ul>
+     */
     logger = function (logName) {
         var tmpLogger;
         if (!logName || logName === "") {
@@ -56,29 +115,58 @@
 
     logger.prototype = {
         constructor:logger,
+        /**
+         * Log level
+         */
         loglevel: LOGLEVEL,
+        /**
+         * Version number
+         */
         version:"0.2.0",
+        /**
+         * Logger formatter. Currently a plain text formatter
+         */
         formatter:new textFormatter(),
+        /**
+         * @ignore
+         */
         init:function (logName) {
             this.logName = logName;
             return this;
         },
+        /**
+         * Gets the number of filtered log messages. Only for testing purposes
+         * @returns {integer} Number of Filtered messages
+         */
         _filteredLogs:function () {
             return filteredLogs;
         },
+        /**
+         * Gets the indentation level of the specified logger. Only for testing
+         * purposes
+         *
+         * @param {string}logName logger name
+         * @returns {integer} indentation level
+         */
         _getIndentLevel:function (logName) {
             return registered[logName].indentationLevel;
         },
         /**
          * Filter current loggers by name and priority level.
-         * Only log entries from matched loggers and priority > filter level are allowed. Filtered logs are lost.
+         * </p>
+         * Only log entries from matched loggers and priority > filter level are
+         * allowed. Filtered logs are lost.
          *
-         * @param {Object|string} options Filter options. There are two shortcuts :
-         * string "all" activate all loggers (logLevel: -1, pattern: ".*")
-         * string "none" deactivate all loggers (logLevel: 100, pattern: ".*")
-         * @param {number} options.logLevel Priority level
-         * @param {string} options.pattern Pattern that matches against current registered loggers. Pattern must be regExp
-         * compatible.
+         * @param {Object|string} options filter options.
+         * </p>
+         * There are two shortcuts :
+         * <ul>
+         *     <li>"all": activates all loggers (logLevel: -1, pattern: ".*")</li>
+         *     <li>"none": deactivates all loggers (logLevel: 100, pattern: ".*")</li>
+         * </ul>
+         * @param {integer} options.logLevel Priority level
+         * @param {string} options.pattern Pattern that matches against current
+         * registered loggers. Pattern must be regExp compatible.
          * */
         filter:function (options) {
             var name, regExp, logLevel;
@@ -113,49 +201,106 @@
         }
     };
 
+    /**
+     * Extension point
+     */
     logger.fn = logger.prototype;
 
+    /**
+     * @namespace Output object. Currently window.console
+     * </p>
+     * Redefining backend allows logs redirection
+     * </p>
+     */
     logger.prototype.backend = window.console || {};
 
+    /**
+     * FailSafe output. Currently unused.
+     * </p> window.console its the best option, alert messages are too intrusive
+     */
     logger.prototype.backend.failSafe = function () {
         //silent
     };
 
+    /**
+     * FailSafe grouping activation
+     */
     logger.prototype.backend.failSafeGroup = function () {
         failSafeIndentation = true;
     };
 
+    /**
+     * FailSafe ungrouping activation
+     */
     logger.prototype.backend.failSafeGroupEnd = function () {
         failSafeIndentation = true;
     };
 
+    /**
+     * trace backend
+     * @function
+     */
     logger.prototype.backend.trace = window.console.trace || logger.prototype.backend.log;
-
+    /**
+     * log backend
+     * @function
+     */
     logger.prototype.backend.log = window.console.log || logger.prototype.backend.failSafe;
-
+    /**
+     * debug backend
+     * @function
+     */
     logger.prototype.backend.debug = window.console.debug || logger.prototype.backend.log;
-
+    /**
+     * info backend
+     * @function
+     */
     logger.prototype.backend.info = window.console.info || logger.prototype.backend.log;
-
+    /**
+     * warn backend
+     * @function
+     */
     logger.prototype.backend.warn = window.console.warn || logger.prototype.backend.log;
-
+    /**
+     * error backend
+     * @function
+     */
     logger.prototype.backend.error = window.console.error || logger.prototype.backend.log;
-
+    /**
+     * group backend
+     * @function
+     */
     logger.prototype.backend.group = window.console.group || logger.prototype.backend.failSafeGroup;
-
+    /**
+     * groupCollapsed backend
+     * @function
+     */
     logger.prototype.backend.groupCollapsed = window.console.groupCollapsed || window.console.group || logger.prototype.backend.failSafeGroup;
-
+    /**
+     * groupEnd backend
+     * @function
+     */
     logger.prototype.backend.groupEnd = window.console.groupEnd || logger.prototype.backend.failSafeGroupEnd;
 
     logger.prototype.init.prototype = logger.prototype;
 
     //TODO: refactor using wef.extend
 
-    logger.prototype.init.prototype.debug = function (message) {
+    logger.prototype.init.prototype.debug =
+    /**
+     * Logs messages of logLevel=debug
+     * @param {string}message
+     * @param {string}[messages] more messages, comma separated
+     * @memberOf logger#
+     * @name debug
+     * @function
+     */
+    function (message) {
         if (registered[lastLogger].logLevel > LOGLEVEL.debug) {
             filteredLogs++;
             return this;
         }
+        //crossBrowser support
         if (Function.prototype.bind && console && typeof console.debug == "object") {
             var debug = Function.prototype.bind.call(console.debug, console);
             debug.apply(console, this.formatter.format(arguments, registered[lastLogger].indentationLevel));
@@ -166,7 +311,16 @@
         }
     };
 
-    logger.prototype.init.prototype.error = function (message) {
+    logger.prototype.init.prototype.error =
+    /**
+     * Logs messages of logLevel=error
+     * @param {string}message
+     * @param {string}[messages] more messages, comma separated
+     * @memberOf logger#
+     * @name error
+     * @function
+     */
+    function (message) {
         if (registered[lastLogger].logLevel > LOGLEVEL.error) {
             filteredLogs++;
             return this;
@@ -181,7 +335,16 @@
         }
     };
 
-    logger.prototype.init.prototype.info = function (message) {
+    logger.prototype.init.prototype.info =
+    /**
+     * Logs messages of logLevel=info
+     * @param {string}message
+     * @param {string}[messages] more messages, comma separated
+     * @memberOf logger#
+     * @name info
+     * @function
+     */
+    function (message) {
         if (registered[lastLogger].logLevel > LOGLEVEL.info) {
             filteredLogs++;
             return this;
@@ -196,7 +359,16 @@
         }
     };
 
-    logger.prototype.init.prototype.warn = function (message) {
+    logger.prototype.init.prototype.warn =
+    /**
+     * Logs messages of logLevel=warn
+     * @param {string}message
+     * @param {string}[messages] more messages, comma separated
+     * @memberOf logger#
+     * @name warn
+     * @function
+     */
+    function (message) {
         if (registered[lastLogger].logLevel > LOGLEVEL.warn) {
             filteredLogs++;
             return this;
@@ -211,7 +383,16 @@
         }
     };
 
-    logger.prototype.init.prototype.log = function (message) {
+    logger.prototype.init.prototype.log =
+    /**
+     * Logs messages of logLevel=log
+     * @param {string}message
+     * @param {string}[messages] more messages, comma separated
+     * @memberOf logger#
+     * @name log
+     * @function
+     */
+    function (message) {
         if (registered[lastLogger].logLevel > LOGLEVEL.log) {
             filteredLogs++;
             return this;
@@ -226,7 +407,16 @@
         }
     };
 
-    logger.prototype.init.prototype.trace = function () {
+    logger.prototype.init.prototype.trace =
+    /**
+     * Logs messages of logLevel=trace
+     * @param {string}message
+     * @param {string}[messages] more messages, comma separated
+     * @memberOf logger#
+     * @name trace
+     * @function
+     */
+    function () {
         if (registered[lastLogger].logLevel > LOGLEVEL.trace) {
             filteredLogs++;
             return this;
@@ -241,7 +431,16 @@
         }
     };
 
-    logger.prototype.init.prototype.group = function (message) {
+    logger.prototype.init.prototype.group =
+    /**
+     * Groups next messages until there is a call to groupEnd
+     * and logs messages to logLevel=log
+     * @param {string}[messages] more messages, comma separated
+     * @memberOf logger#
+     * @name group
+     * @function
+     */
+    function (message) {
         registered[lastLogger].indentationLevel++;
         this.backend.groupCollapsed.call(this.backend);
         if (registered[lastLogger].logLevel > LOGLEVEL.log) {
@@ -254,7 +453,16 @@
         return this;
     };
 
-    logger.prototype.init.prototype.groupEnd = function (message) {
+    logger.prototype.init.prototype.groupEnd =
+    /**
+     * Ungroup previously grouped messages
+     * and logs messages to logLevel=log
+     * @param {string}[messages] messages, comma separated
+     * @memberOf logger#
+     * @name groupEnd
+     * @function
+     */
+    function (message) {
         registered[lastLogger].indentationLevel--;
         this.backend.groupEnd.call(this.backend);
         if (registered[lastLogger].logLevel > LOGLEVEL.trace) {
