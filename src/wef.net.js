@@ -2,6 +2,10 @@
  * Wef net module
  * Copyright (c) 2011 Pablo Escalada
  * MIT Licensed
+ *
+ * Original ajax code from https://github.com/alexyoung/turing.js/blob/master/turing.net.js
+ * Copyright (C) 2010-2011 Alex R. Young
+ * MIT Licensed
  */
 (function (wef) {
     var net;
@@ -26,7 +30,7 @@
             return this;
         },
         /**
-         * Launch an XMLHttpRequest, waiting the result
+         * Launch a XMLHttpRequest, waiting the result
          * @param url request url
          * @param [options] additional arguments
          * @param {string}options.method request method, supports[get|post]

@@ -130,13 +130,21 @@
 
     if (!("map" in Array.prototype)) {
         /**
-         * Crossbrowser implementation of Array.map()
+         * Crossbrowser implementation of Array.map().
+         *
+         * More info http://stackoverflow.com/questions/2790001/fixing-javascript-array-functions-in-internet-explorer-indexof-foreach-etc
+         * </p>
+         * Copyright (c) 2010 bobince [http://stackoverflow.com/users/18936/bobince]
+         * </p>
+         * Public Domain Licensed
+         *
          * @param {Array}mapper the source array
          * @param [that] "this" object reference
          */
-        Array.prototype.map = function (mapper, that /*opt*/) {
-            var other = new Array(this.length);
-            for (var i = 0, n = this.length; i < n; i++)
+        Array.prototype.map = function (mapper, that) {
+            var other, i;
+            other = new Array(this.length);
+            for (i = 0, n = this.length; i < n; i++)
                 if (i in this)
                     other[i] = mapper.call(that, this[i], i, this);
             return other;
@@ -626,6 +634,10 @@
  * Wef net module
  * Copyright (c) 2011 Pablo Escalada
  * MIT Licensed
+ *
+ * Original ajax code from https://github.com/alexyoung/turing.js/blob/master/turing.net.js
+ * Copyright (C) 2010-2011 Alex R. Young
+ * MIT Licensed
  */
 (function (wef) {
     var net;
@@ -650,7 +662,7 @@
             return this;
         },
         /**
-         * Launch an XMLHttpRequest, waiting the result
+         * Launch a XMLHttpRequest, waiting the result
          * @param url request url
          * @param [options] additional arguments
          * @param {string}options.method request method, supports[get|post]
@@ -746,6 +758,10 @@
  * Uses a lightly modified version of JSCSSP
  * by Daniel Glazman <daniel.glazman@disruptive-innovations.com>
  * licensed under MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * Changelog:
+ * - Add module pattern to jscsp
+ * - Change const declarations to var for IE9 compatibility
  */
 (function (wef) {
     /**#nocode+*/

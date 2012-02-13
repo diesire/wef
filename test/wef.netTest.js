@@ -14,17 +14,15 @@ test("public properties", function () {
     equal(typeof wef.net.version, "string", "wef.net.version");
 });
 
-asyncTest("public methods1", function () {
+asyncTest("public methods", function () {
     expect(1);
-
     wef.net.ajax("template.css", {
         success: function() {
-            ok(true);
+            ok(true, "wef.net.ajax() success OK");
         }
     });
 
     setTimeout(function () {
-
         start();
     }, 100);
 });

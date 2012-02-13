@@ -6,6 +6,10 @@
  * Uses a lightly modified version of JSCSSP
  * by Daniel Glazman <daniel.glazman@disruptive-innovations.com>
  * licensed under MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * Changelog:
+ * - Add module pattern to jscsp
+ * - Change const declarations to var for IE9 compatibility
  */
 (function (wef) {
     /**#nocode+*/
