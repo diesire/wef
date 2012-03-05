@@ -1,6 +1,10 @@
 /*!
- * Wef crossBrowser
- * Copyright (c) 2011 Pablo Escalada
+ * Wef crossbrowser
+ * Copyright (c) 2011-2012 Pablo Escalada
+ *
+ * Contributor(s):
+ *   César Acebal
+ *
  * MIT Licensed
  */
 (function (wef) {
