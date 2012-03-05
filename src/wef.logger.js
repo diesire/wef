@@ -1,6 +1,10 @@
 /*!
  * Wef logger
- * Copyright (c) 2011 Pablo Escalada
+ * Copyright (c) 2011-2012 Pablo Escalada
+ *
+ * Contributor(s):
+ *   César Acebal
+ *
  * MIT Licensed
  */
 (function (wef) {
