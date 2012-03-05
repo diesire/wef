@@ -1,6 +1,10 @@
 /*!
  * wef.cssParser
- * Copyright (c) 2011 Pablo Escalada
+ * Copyright (c) 2011-2012 Pablo Escalada
+ *
+ * Contributor(s):
+ *   César Acebal
+ *
  * MIT Licensed
  *
  * Uses a lightly modified version of JSCSSP
