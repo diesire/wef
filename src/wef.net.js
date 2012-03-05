@@ -1,6 +1,10 @@
 /*!
  * Wef net module
- * Copyright (c) 2011 Pablo Escalada
+ * Copyright (c) 2011-2012 Pablo Escalada
+ *
+ * Contributor(s):
+ *   César Acebal
+ *
  * MIT Licensed
  *
  * Original ajax code from https://github.com/alexyoung/turing.js/blob/master/turing.net.js
